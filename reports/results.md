@@ -91,4 +91,4 @@ Reply cache misses: 0
 
 Gold escalation rate: 0.355
 llm cache: 0 misses
-Wall time: 20.3s
+Wall time: 21.2s

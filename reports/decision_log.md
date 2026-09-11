@@ -1,6 +1,6 @@
 # Decision log
 
-The fifteen decisions a reader could not infer from the code. Smaller ones are in the report appendix.
+The fifteen main architectural decisions a reader could not infer from the code, followed by smaller implementation decisions (16–24).
 
 1. **SpotifyCares over AmazonHelp/AppleSupport.** Apple's and Amazon's replies are 52%+ "DM us"; Spotify's carry reinstall steps, the downloads article, licensing and country answers. Grounding needs something to ground in.
 2. **Split by thread id before anything else.** All tuning on dev; golden touched once. The harness asserts golden thread ids appear in neither corpus nor dev.

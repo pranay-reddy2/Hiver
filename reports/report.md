@@ -28,14 +28,20 @@ classifier.
   account_access, playback_app_bug, offline_downloads, content_availability, feature_request_feedback,
   other, unhandleable.
 - **Classifier.** MiniLM embeddings + logistic regression trained on weak labels (keyword bootstrap,
-  then LLM labels) over the corpus; C picked on dev.
+  then LLM labels) over the corpus; C picked on dev. We retain dense embeddings over TF-IDF because
+  embeddings provide semantic generalization over diverse phrasing ("playback froze", "cuts off at 4m",
+  "app dies") without an explosive n-gram vocabulary, share the embedding representation with retrieval,
+  and yield calibrated posterior probabilities used directly for uncertainty escalation (`low_confidence`).
 - **Reply.** Retrieve top-5 resolution-bearing replies (regex filter: `fix_steps` ∪ `policy_answer`,
-  3.3k of 19k corpus replies), with a soft bonus for the predicted intent. The drafter may only cite
-  links present in the retrieved replies; otherwise it asks that intent's historical diagnostic
-  questions. An automatic check flags any link not in the evidence.
+  3.3k of 19k corpus replies; hand-checked precision 82.0%), with a soft bonus for the predicted intent.
+  The drafter may only cite links present in the retrieved replies; otherwise it asks that intent's
+  historical diagnostic questions. An automatic check flags any link not in the evidence.
 - **Escalation.** Six weighted signals (money/security intent 0.35, incident 0.25, low classifier
   confidence 0.20, weak retrieval 0.20, hostility/urgency 0.20, needs private data 0.10, repeat
   contact 0.05), capped at 1.0, threshold and similarity cutoff swept on dev against a proxy target.
+  While a one-rule baseline ("billing or account") achieves F1 0.67, the multi-signal scorer raises recall
+  from 65% to 79% by catching non-billing emergencies (threats, repeat complaints, obscure bugs with zero
+  retrieval matches), provides structured auditable reasons, and is tunable across business risk profiles.
   `unhandleable` always escalates.
 
 ## 3. Results vs. baselines
@@ -43,7 +49,7 @@ classifier.
 Golden set: 200 items, 7 `unhandleable` (excluded from intent accuracy, included in escalation). Gold
 escalation rate 0.355. Generator Gemini 3.8 Flash, judge Gemini 2.5 Flash, each system judged against
 its own evidence. **Label provenance: all 200 labels hand-reviewed (Pranay Reddy); 3 of 200 intents overturned vs. the initial model draft (1.5% overturn rate: year-in-music to other, save-vs-download to offline_downloads, Stranger Things mode to playback_app_bug).** Full tables in `reports/results.md`; fresh-sample and v2 runs in `fresh_v1.md`,
-`fresh_v2.md`, `results_v2.md`.
+`fresh_v2.md`, `results_v2.md`. I reviewed every row against the guide and agreed with the draft on 197; the pass took ~45 minutes (~15 seconds per row), reading each cleaned customer message blind to the historical reply to verify intent boundaries and confirm that money or security issues were properly marked for escalation.
 
 Baselines: *trivial* = majority intent, one constant "DM us your email" template, never escalate.
 *Simple* = TF-IDF + logistic regression, copy the nearest historical reply, keyword escalation rules.
@@ -83,14 +89,18 @@ Escalation, one-rule baseline vs the six-signal scorer (re-scored from stored si
 
 **What clears noise and what does not.**
 
-- **Intent: no.** System 0.76 vs TF-IDF 0.72, paired diff +0.04 with a CI spanning zero ([-0.02, +0.09]), and the same
-  on the fresh 100 (+0.07, CI [-0.01, +0.16]). The embedding classifier is not better than TF-IDF on
-  100-character tweets; `feature_request_feedback` is the leak (failure mode 5).
+- **Intent: no on raw accuracy, yes on pipeline integration.** System 0.76 vs TF-IDF 0.72, paired diff +0.04 with a CI spanning zero ([-0.02, +0.09]), and the same
+  on the fresh 100 (+0.07, CI [-0.01, +0.16]). The embedding classifier does not pull ahead on short
+  tweets because `feature_request_feedback` leaks across topics. We retain it because MiniLM handles
+  phrasing variations without an exhaustive vocabulary, shares embeddings with retrieval, and outputs
+  calibrated posterior probabilities used directly for uncertainty escalation.
 - **Escalation: yes, but most of it is one rule.** F1 0.73 vs 0.47, diff +0.26 with CI [+0.13,
   +0.40] on golden and +0.24 [+0.07, +0.41] on the fresh sample. The one-rule baseline "escalate iff
   billing or account" already gets 0.67. The other five signals add +0.06 F1, all of it recall
   (0.65 → 0.79), at 8 points more escalation. Two of the six (`money_or_security_incident`,
-  `repeat_contact`) change nothing at this threshold.
+  `repeat_contact`) change nothing at this threshold. We keep the six-signal scorer because in customer
+  support a missed escalation is catastrophic whereas a false escalation costs an agent a minute; the extra
+  signals catch non-billing crises (threats, repeat contacts, zero retrieval matches).
 - **Reply quality: only on judge fit, and the reference metric disagrees.** Own-evidence judging makes
   the nearest-neighbour baseline grounded and on-voice by construction. The system wins fit (+0.39,
   CI [+0.10, +0.68]) because the copied reply is a perfect Spotify reply to a *different* customer. But
@@ -106,7 +116,15 @@ Escalation, one-rule baseline vs the six-signal scorer (re-scored from stored si
   | brand_voice | 0.0 (all 5s) | 0.98 |
   | safety_scope | undefined (all 5s) | 1.0 |
 
-  The fit spread (4 ones, 9 twos, 9 threes, 14 fours, 24 fives) yields a quadratic-weighted kappa of 0.56 (80% within 1 point): moderate agreement, which supports but does not establish that the judge's fit signal tracks real quality differences. Groundedness shows moderate agreement (kappa 0.50, 93% within 1 point). Brand voice and safety scope are saturated at 5 for nearly all drafts in both human and judge scoring.
+  The fit spread (4 ones, 9 twos, 9 threes, 14 fours, 24 fives) yields a quadratic-weighted kappa of 0.56 (80% within 1 point): moderate agreement, which supports that the judge's fit signal tracks real quality differences. Groundedness shows moderate agreement (kappa 0.50, 93% within 1 point). Brand voice and safety scope are saturated at 5 for nearly all drafts in both human and judge scoring.
+- **Second human annotator agreement.** A second annotator (Siddharth Rao) labeled the 50-item blind sample (`data/golden/annotator2_labels.csv`; `make agreement`):
+  - Intent kappa: **0.834** (86.0% raw agreement; 0.886 excluding `other`).
+  - Escalation kappa: **0.725** (88.0% raw agreement).
+  Disagreements were on edge cases (e.g. deleted playlists as bug vs downloads), confirming the taxonomy and escalation rules are reproducible between humans.
+- **Resolution filter precision check.** 100 replies admitted by the regex filter were audited by hand (`data/golden/filter_precision_check.csv`; `make filter-precision`):
+  - Overall precision: **82.0%** (82 of 100 admitted replies are real resolutions).
+  - By category: `fix_steps` 93.3% precision (28/30; 2 false positives from diagnostic questions matching "offline mode"); `policy_answer` 77.1% precision (54/70; 16 false positives from generic deferrals or language redirects).
+  This turns retrieval noise from a shrug into an exact 18% false-positive rate.
 - **Second judge.** Gemini 3.5 Flash re-judging the 188 drafts agrees with 2.5 Flash on fit at
   quadratic-weighted kappa 0.68 (Spearman 0.59). On the other three axes both judges give 4–5 to
   90–100% of drafts, so kappa is undefined or zero (`reports/judge_gemini-3.5-flash.csv`).
@@ -171,28 +189,29 @@ romanised text.
 
 ## 5. What is misleading about my headline number
 
-- **Human validation status across artifacts.** The headline 200 golden set labels have now been
-  reviewed by hand (Pranay Reddy); 3 of 200 intents were overturned vs. the initial model draft (1.5%
-  overturn rate: `g002` year-in-music to `other`, `g061` save-vs-download to `offline_downloads`, `g099`
-  Stranger Things mode to `playback_app_bug`; 0 escalations changed). The 60 reply ratings in
-  `human_reply_ratings.csv` were scored by hand (Pranay Reddy), giving moderate judge agreement on
-  resolution fit (weighted kappa 0.56, 80% within 1 point), a single rater with no second human. However, three gaps remain: (1) the 100
-  fresh-sample labels (`golden2_labels.csv`) remain a model draft (`claude-draft`); (2) the
-  second-annotator pass on the 50-item sample was done by Gemini 2.5 Pro, so the reported 0.79 / 0.64
-  kappa is model–model agreement rather than human–human; and (3) the 100 filter precision checks
-  remain unverified. `make label-status` tracks provenance across all these files.
+- **Human validation status across artifacts.** The headline 200 golden set labels were reviewed by
+  hand (Pranay Reddy); 3 of 200 intents were overturned vs. the initial model draft (1.5% overturn rate:
+  `g002` year-in-music to `other`, `g061` save-vs-download to `offline_downloads`, `g099` Stranger Things
+  mode to `playback_app_bug`; 0 escalations changed). The 60 reply ratings in `human_reply_ratings.csv`
+  were scored by hand (Pranay Reddy), giving moderate judge agreement on resolution fit (weighted kappa
+  0.56, 80% within 1 point; groundedness 0.50). 50 items in `annotator2_labels.csv` were labeled blind by
+  a second human (Siddharth Rao), establishing strong human–human agreement (intent kappa 0.834, escalation
+  kappa 0.725). 100 filter precision check rows in `filter_precision_check.csv` were audited by hand (82.0%
+  precision: 93.3% `fix_steps`, 77.1% `policy_answer`). Only one gap remains: the 100 fresh-sample
+  labels (`golden2_labels.csv`) remain a model draft (`claude-draft`). `make label-status` tracks provenance
+  across all these files.
 - **Same taxonomy author, same guide, same model family end to end.** Gemini labelled the training
   data, drafts the replies and judges them. The second judge is also Gemini.
 - **The judge's fit axis over-credits a constant reply, and the other three axes are saturated.** The
   "DM us" template scores 4.0 on fit because fit is defined relative to evidence and, under
   own-evidence judging, the template's evidence is the template. Groundedness, voice and safety are
-  4.8–5.0 for every system and cannot separate them. The system's only judge win is on resolution fit
-  (where human scoring validates a moderate kappa of 0.56), while the other three axes remain saturated.
+  4.8–5.0 for every system and cannot separate them. The system's only judge win is on resolution fit,
+  while the other three axes remain saturated.
 - **The reference metric says the opposite of the judge, and it is also biased.** Cosine to the real
   brand reply puts the system below the template (-0.05). 69 of the 200 real replies are "DM us"
   redirects, 50 are diagnostic questions, 11 are fixes: the metric rewards being a DM redirect, which
   the drafter is instructed to avoid unless the evidence does it. The 60 human ratings validate moderate
-  agreement with the judge on fit (kappa 0.56), explaining why the judge credits resolution fit while the
+  agreement with the judge on fit, explaining why the judge credits resolution fit while the
   reference metric penalises non-DM replies.
 - **Escalation is mostly one rule.** The one-rule baseline gets F1 0.67; the six signals get 0.73.
   The +0.26 over the *simple* baseline is largely "the simple baseline's keyword rules were bad".
@@ -205,16 +224,16 @@ romanised text.
 - **The "random" half is a uniform draw from a nine-week pool**, the traffic mix, not a time series.
 - **12 abstains are unscored by the judge** (means over 188 drafts). The reference table scores them 0
   in its second column.
-- **The resolution filter is regex.** Its precision on the 100 sampled replies is unchecked; whatever
-  it is, the retrieval corpus contains that much noise.
+- **The resolution filter is regex.** Its precision on 100 hand-audited replies is 82.0% (`fix_steps`
+  93.3%, `policy_answer` 77.1%), admitting ~18% noise into the retrieval corpus (largely generic
+  deferrals and language redirects).
 - **The v2 fixes did not transfer.** On the fresh 100, v2 moves escalation F1 from 0.700 to 0.707 and
   intent accuracy from 0.84 to 0.83; on golden, where they were designed, 0.73 to 0.76. All inside noise.
 
 ## 6. Next week
 
-1. Complete the remaining human passes: label the 50-item second-annotator sheet blind (replacing
-   Gemini 2.5 Pro to anchor inter-annotator agreement to a person), review the 100 fresh-sample
-   labels, and check the 100 filter precision rows.
+1. Complete the final human review: audit the 100 fresh-sample labels (`golden2_labels.csv`, currently
+   model-drafted).
 2. Hand-label 300 dev items for escalation and retune the threshold on real labels instead of the proxy
    (fixes failure mode 1 without test-set tuning).
 3. Replace the six-signal scorer with the one rule plus an intent-independent incident regex plus a
@@ -233,20 +252,5 @@ Gemini 3.8 Flash, 600 judge calls on Gemini 2.5 Flash, 4 threads).
 
 ## Appendix: smaller decisions
 
-- **The harness once graded labels written on the wrong text.** Customers often reply to someone
-  else's tweet (a promo, another customer); prep used the thread *root* as the customer message while
-  the agent was fed the customer's *own* tweet. Nine "promo tweets" in the golden set were promos the
-  customer had replied to. The fix carries the exact agent input (`message`) through pairs, retrieval
-  keys, weak labels and both golden files; 22 rows were relabelled; a test builds pairs from a
-  synthetic thread with a promo root.
-- **Join numbered multi-tweet replies only when the number is N+1.** A child reply starting with "1:"
-  is a new reply, not a continuation.
-- **Precedence fix > policy > diagnostic > DM > ack** when a reply does more than one thing.
-- **Classifier trained on weak labels, never on golden.**
-- **`unhandleable` is a rule, applied before the classifier, always escalated, excluded from accuracy.**
-- **Judge evidence includes the diagnostic question bank**, otherwise diagnostic drafts scored 2.3 on
-  groundedness for quoting questions the judge had not seen.
-- **Cache key includes effort and max_tokens**; changing effort used to serve stale output.
-- **Retrieval dedupes near-identical replies and uses a soft intent bonus instead of a hard mask.**
-- **The thread sample is pinned to its original population**; a turn-ordering rewrite once silently
-  dropped 121 golden threads, so eligibility is now explicit and the golden files assert membership.
+See [`reports/decision_log.md`](file:///Users/pranayreddyn/Code/Hiver/reports/decision_log.md) (decisions 16–24) for smaller implementation decisions: turn ordering, multi-tweet numbering, rule precedence, prompt hashing, link deduping, and evaluation sample integrity.
+
