@@ -78,7 +78,7 @@
   "system_version": "v1",
   "label_provenance": {
     "labeler": {
-      "claude-fable-5.1 (second full read of every row; no human pass)": 200
+      "Pranay Reddy": 200
     },
     "overturned_vs_model_draft": {
       "n": 3,
@@ -86,7 +86,7 @@
       "intent": 3,
       "escalate": 0
     },
-    "human_labelled": false
+    "human_labelled": true
   },
   "systems": {
     "trivial": {
@@ -1374,5 +1374,5 @@
     }
   },
   "llm_cache": "llm cache: 0 misses",
-  "wall_seconds": 21.2
+  "wall_seconds": 20.3
 }

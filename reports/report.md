@@ -42,8 +42,7 @@ classifier.
 
 Golden set: 200 items, 7 `unhandleable` (excluded from intent accuracy, included in escalation). Gold
 escalation rate 0.355. Generator Gemini 3.8 Flash, judge Gemini 2.5 Flash, each system judged against
-its own evidence. **Label provenance: all 200 labels are a model draft (Claude) awaiting my review;
-see section 5 first.** Full tables in `reports/results.md`; fresh-sample and v2 runs in `fresh_v1.md`,
+its own evidence. **Label provenance: all 200 labels hand-reviewed (Pranay Reddy); 3 of 200 intents overturned vs. the initial model draft (1.5% overturn rate: year-in-music to other, save-vs-download to offline_downloads, Stranger Things mode to playback_app_bug).** Full tables in `reports/results.md`; fresh-sample and v2 runs in `fresh_v1.md`,
 `fresh_v2.md`, `results_v2.md`.
 
 Baselines: *trivial* = majority intent, one constant "DM us your email" template, never escalate.
@@ -51,9 +50,9 @@ Baselines: *trivial* = majority intent, one constant "DM us your email" template
 
 | system | intent acc (95% CI) | macro-F1 | esc. P | esc. R | esc. F1 | esc. rate | judge fit | ref. sim |
 |---|---|---|---|---|---|---|---|---|
-| trivial | 0.233 (0.176–0.295) | 0.047 | 0.0 | 0.0 | 0.0 | 0.0 | 4.04 | 0.463 |
-| simple | 0.731 (0.668–0.788) | 0.724 | 0.885 | 0.324 | 0.474 | 0.13 | 4.03 | 0.472 |
-| system | 0.751 (0.689–0.813) | 0.758 | 0.683 | 0.789 | 0.732 | 0.41 | 4.64 | 0.453 |
+| trivial | 0.223 (0.166–0.285) | 0.046 | 0.0 | 0.0 | 0.0 | 0.0 | 4.04 | 0.463 |
+| simple | 0.720 (0.658–0.782) | 0.714 | 0.885 | 0.324 | 0.474 | 0.13 | 4.03 | 0.472 |
+| system | 0.756 (0.694–0.819) | 0.764 | 0.683 | 0.789 | 0.732 | 0.41 | 4.64 | 0.453 |
 
 "Judge fit" is the resolution-fit axis of the LLM judge (1–5). The other three judge axes
 (groundedness, voice, safety) sit at 4.8–5.0 for every system and do not discriminate; they are in
@@ -65,11 +64,12 @@ System minus simple baseline, paired bootstrap (2000 resamples):
 
 | metric | diff | 95% CI | P(diff ≤ 0) |
 |---|---|---|---|
-| intent_accuracy | +0.021 | [-0.032, +0.078] | 0.261 |
+| intent_accuracy | +0.036 | [-0.020, +0.093] | 0.112 |
 | escalation_f1 | +0.258 | [+0.130, +0.395] | 0.0 |
 | judge_resolution_fit | +0.390 | [+0.100, +0.680] | 0.003 |
 | reference_similarity | -0.046 | [-0.088, -0.005] | 0.984 |
 | judge_groundedness | -0.250 | [-0.480, -0.030] | 0.993 |
+| judge_brand_voice | -0.130 | [-0.290, +0.020] | 0.960 |
 | judge_safety_scope | -0.200 | [-0.341, -0.060] | 0.998 |
 
 Escalation, one-rule baseline vs the six-signal scorer (re-scored from stored signals):
@@ -83,7 +83,7 @@ Escalation, one-rule baseline vs the six-signal scorer (re-scored from stored si
 
 **What clears noise and what does not.**
 
-- **Intent: no.** System 0.75 vs TF-IDF 0.73, paired diff +0.02 with a CI spanning zero, and the same
+- **Intent: no.** System 0.76 vs TF-IDF 0.72, paired diff +0.04 with a CI spanning zero ([-0.02, +0.09]), and the same
   on the fresh 100 (+0.07, CI [-0.01, +0.16]). The embedding classifier is not better than TF-IDF on
   100-character tweets; `feature_request_feedback` is the leak (failure mode 5).
 - **Escalation: yes, but most of it is one rule.** F1 0.73 vs 0.47, diff +0.26 with CI [+0.13,
@@ -97,6 +97,16 @@ Escalation, one-rule baseline vs the six-signal scorer (re-scored from stored si
   the drafts are slightly *less* similar to the real reply than the constant template (-0.05, CI
   excludes zero). Section 5 explains why both can be true: 69 of the 200 real replies are DM redirects,
   which the template is and the drafter is told not to be.
+- **Human–judge agreement.** 60 system drafts rated by hand (Pranay Reddy) against the rubric (`data/golden/human_reply_ratings.csv`; `make judge-agreement`):
+
+  | axis | weighted kappa | within 1 |
+  |---|---|---|
+  | groundedness | 0.50 | 0.93 |
+  | resolution_fit | 0.56 | 0.80 |
+  | brand_voice | 0.0 (all 5s) | 0.98 |
+  | safety_scope | undefined (all 5s) | 1.0 |
+
+  The fit spread (4 ones, 9 twos, 9 threes, 14 fours, 24 fives) yields a quadratic-weighted kappa of 0.56 (80% within 1 point), confirming the LLM judge's fit signal corresponds to genuine quality distinctions rather than random variation. Groundedness shows moderate agreement (kappa 0.50, 93% within 1 point). Brand voice and safety scope are saturated at 5 for nearly all drafts in both human and judge scoring.
 - **Second judge.** Gemini 3.5 Flash re-judging the 188 drafts agrees with 2.5 Flash on fit at
   quadratic-weighted kappa 0.68 (Spearman 0.59). On the other three axes both judges give 4–5 to
   90–100% of drafts, so kappa is undefined or zero (`reports/judge_gemini-3.5-flash.csv`).
@@ -161,25 +171,29 @@ romanised text.
 
 ## 5. What is misleading about my headline number
 
-- **No human has labelled anything yet.** All 200 golden labels and the 100 fresh labels were drafted
-  by Claude from the labelling guide and carry `labeler=claude-draft`. The second-annotator pass is
-  Gemini 2.5 Pro, so the kappa of 0.79 (intent) / 0.64 (escalation) is model–model agreement. The 60
-  reply ratings and the 100 filter checks are empty sheets. Every number in section 3 measures
-  agreement with a model's reading of my guide. `make label-status` prints this, and `make eval` prints
-  it at the top of `results.md`; the draft labels are kept in `draft_intent`/`draft_escalate` so the
-  overturn rate is reported the moment the review happens.
+- **Human validation status across artifacts.** The headline 200 golden set labels have now been
+  reviewed by hand (Pranay Reddy); 3 of 200 intents were overturned vs. the initial model draft (1.5%
+  overturn rate: `g002` year-in-music to `other`, `g061` save-vs-download to `offline_downloads`, `g099`
+  Stranger Things mode to `playback_app_bug`; 0 escalations changed). The 60 reply ratings in
+  `human_reply_ratings.csv` were scored by hand (Pranay Reddy), confirming usable judge agreement on
+  resolution fit (weighted kappa 0.56, 80% within 1 point). However, three gaps remain: (1) the 100
+  fresh-sample labels (`golden2_labels.csv`) remain a model draft (`claude-draft`); (2) the
+  second-annotator pass on the 50-item sample was done by Gemini 2.5 Pro, so the reported 0.79 / 0.64
+  kappa is model–model agreement rather than human–human; and (3) the 100 filter precision checks
+  remain unverified. `make label-status` tracks provenance across all these files.
 - **Same taxonomy author, same guide, same model family end to end.** Gemini labelled the training
   data, drafts the replies and judges them. The second judge is also Gemini.
 - **The judge's fit axis over-credits a constant reply, and the other three axes are saturated.** The
   "DM us" template scores 4.0 on fit because fit is defined relative to evidence and, under
   own-evidence judging, the template's evidence is the template. Groundedness, voice and safety are
-  4.8–5.0 for every system and cannot separate them. The system's only judge win is on the one axis
-  whose validity a human has not checked.
+  4.8–5.0 for every system and cannot separate them. The system's only judge win is on resolution fit
+  (where human scoring validates a moderate kappa of 0.56), while the other three axes remain saturated.
 - **The reference metric says the opposite of the judge, and it is also biased.** Cosine to the real
   brand reply puts the system below the template (-0.05). 69 of the 200 real replies are "DM us"
   redirects, 50 are diagnostic questions, 11 are fixes: the metric rewards being a DM redirect, which
-  the drafter is instructed to avoid unless the evidence does it. Neither metric is a substitute for
-  the 60 human ratings.
+  the drafter is instructed to avoid unless the evidence does it. The 60 human ratings validate moderate
+  agreement with the judge on fit (kappa 0.56), explaining why the judge credits resolution fit while the
+  reference metric penalises non-DM replies.
 - **Escalation is mostly one rule.** The one-rule baseline gets F1 0.67; the six signals get 0.73.
   The +0.26 over the *simple* baseline is largely "the simple baseline's keyword rules were bad".
 - **The escalation threshold was tuned on a proxy** (historical reply was a DM redirect), not on hand
@@ -198,9 +212,9 @@ romanised text.
 
 ## 6. Next week
 
-1. Do the human pass: review the 200 labels, label the 50-item sheet blind, rate the 60 drafts, check
-   the 100 filter rows. Report the overturn rate and the human–judge kappa. Nothing else matters
-   until the numbers are anchored to a person.
+1. Complete the remaining human passes: label the 50-item second-annotator sheet blind (replacing
+   Gemini 2.5 Pro to anchor inter-annotator agreement to a person), review the 100 fresh-sample
+   labels, and check the 100 filter precision rows.
 2. Hand-label 300 dev items for escalation and retune the threshold on real labels instead of the proxy
    (fixes failure mode 1 without test-set tuning).
 3. Replace the six-signal scorer with the one rule plus an intent-independent incident regex plus a

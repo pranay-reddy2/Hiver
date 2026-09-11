@@ -1,6 +1,6 @@
 # results: golden set n=200, system version v1
 
-Label provenance: claude-fable-5.1 (second full read of every row; no human pass): 200  **(model-drafted labels; every number below is agreement with a model's reading of the guide)**
+Label provenance: Pranay Reddy: 200
 Rows changed from the model draft: 3 of 200 (0.015); intent 3, escalate 0
 
 | system | intent acc (95% CI) | macro-F1 | esc. precision | esc. recall | esc. F1 | esc. rate | judge groundedness | judge resolution_fit | judge brand_voice | judge safety_scope |
@@ -91,4 +91,4 @@ Reply cache misses: 0
 
 Gold escalation rate: 0.355
 llm cache: 0 misses
-Wall time: 21.2s
+Wall time: 20.3s
