@@ -18,7 +18,7 @@ dataset. For each incoming customer tweet it:
 | Report: framing, results vs two baselines, top-5 failures, misleading headline, next week | [`reports/report.md`](reports/report.md) |
 | Decision log | [`reports/decision_log.md`](reports/decision_log.md) |
 
-## Reproduce the headline numbers (offline, ~1 minute)
+## Reproduce the headline numbers (offline, about 2 minutes after the download)
 
 ```bash
 cp .env.example .env   # add GEMINI_API_KEY only if you plan to run `make eval-live`
@@ -32,7 +32,9 @@ make eval           # golden-set metrics from the committed LLM cache; no API ke
 code 2 and prints how many calls are missing. `make eval-live` (with `GEMINI_API_KEY` set) makes
 those calls and appends them to the cache.
 
-Measured on a clean checkout: see the "Reproduction time" line in `reports/report.md`.
+Measured on a clean clone (MacBook Air, M-series, CPU only): `make setup` about 1 min (wheel download),
+`make build` 54 s, `make eval` 18 s with zero cache misses, `make test` 5 s. The 177 MB dataset download
+is on top of that. No API key is needed for any of it.
 
 ## Try it
 

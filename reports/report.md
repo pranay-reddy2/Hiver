@@ -197,10 +197,10 @@ see stance. This is also why the embedding classifier does not beat TF-IDF.
 
 ## Reproduction time
 
-Measured on a MacBook Air (M-series, CPU only), clean `models/` and embedding cache:
-`make build` 1 min 12 s; `make eval` from the committed cache about 30 s. The live run that produced
-the cache took 27 min for drafts (199 on Gemini 3.8 Flash) and 12 min for 600 judge calls (Gemini 2.5
-Flash), 4 threads each.
+Measured on a clean `git clone` on a MacBook Air (M-series, CPU only), raw data already downloaded:
+`make setup` about 1 min, `make build` 54 s, `make eval` 18 s with zero cache misses and the exact
+headline table, `make test` 5 s. The live run behind the cache took 10 min (200 drafts on Gemini 3.8
+Flash and 600 judge calls on Gemini 2.5 Flash, 4 threads).
 
 ## Appendix: smaller decisions
 
