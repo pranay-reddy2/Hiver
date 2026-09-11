@@ -74,8 +74,9 @@ make demo MSG="my downloaded songs keep disappearing from my phone"   # runs liv
 
 ## Models
 
-Generator: `gemini-3.1-pro-preview`. Weak labels and judge: `gemini-2.5-flash` (a different, smaller model
-so the judge is not grading its own writing). Embeddings: `all-MiniLM-L6-v2`, run locally.
+Generator: `gemini-3.8-flash` (Gemini 3.1 Pro produced the first run but its 250-request daily quota
+made the pipeline unreproducible; see decision log). Weak labels and judge: `gemini-2.5-flash`, a
+different model so the judge is not grading its own writing. Embeddings: `all-MiniLM-L6-v2`, run locally.
 Model strings are `<provider>:<model>`; the Anthropic backend is also wired, so
 `JUDGE_MODEL=anthropic:claude-haiku-4-5 make eval-live` gives a judge from a different family.
 `make models` lists what your key can reach. Gemini free-tier rate limits are handled with backoff,

@@ -23,7 +23,7 @@ EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # Model strings are "<provider>:<model>". Generator and judge are different models so the judge
 # is not grading its own writing. Set JUDGE_MODEL=anthropic:claude-haiku-4-5 for a different family.
-GEN_MODEL = os.environ.get("GEN_MODEL", "gemini:gemini-3.1-pro-preview")
+GEN_MODEL = os.environ.get("GEN_MODEL", "gemini:gemini-3.8-flash")
 LABEL_MODEL = os.environ.get("LABEL_MODEL", "gemini:gemini-2.5-flash")
 JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "gemini:gemini-2.5-flash")
 

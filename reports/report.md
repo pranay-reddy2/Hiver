@@ -132,7 +132,7 @@ see stance. This is also why the embedding classifier does not beat TF-IDF.
 
 - **The golden labels are a model draft awaiting human review.** They were drafted by an AI assistant
   (Claude) from the labelling guide and are marked `claude-draft` in the file; the second-annotator pass
-  is another model (Gemini 3.1 Pro), so the kappa of 0.79 (intent) / 0.64 (escalation) is model-model
+  is another model (Gemini 3.8 Flash), so the kappa of 0.79 (intent) / 0.64 (escalation) is model-model
   agreement, not human agreement. Until a human reviews the 200 and labels the 50, every number in
   section 3 measures agreement with a model's reading of the guide.
 - **Same taxonomy author, same labelling guide, same model family as the judge.** The intents fit one
@@ -146,7 +146,7 @@ see stance. This is also why the embedding classifier does not beat TF-IDF.
   The headline uses 0.45 because switching would be tuning on the test set.
 - **Weak labels are LLM labels.** The classifier learns the LLM's reading of my intent definitions;
   the human golden set is the only check on that.
-- **The judge (Gemini 2.5 Flash) is a smaller model from the same family as the generator (Gemini 3.1 Pro).** Absolute anchored scoring
+- **The judge (Gemini 2.5 Flash) is a smaller model from the same family as the generator (Gemini 3.8 Flash).** Absolute anchored scoring
   and the human-agreement numbers limit, but do not remove, self-preference.
 - **Groundedness is easy when the evidence is thin.** A reply that only asks diagnostic questions
   scores well on groundedness while resolving nothing; read it alongside resolution fit and mode share.
@@ -170,5 +170,24 @@ see stance. This is also why the embedding classifier does not beat TF-IDF.
 
 Measured on a MacBook Air (M-series, CPU only), clean `models/` and embedding cache:
 `make build` 1 min 12 s; `make eval` from the committed cache about 30 s. The live run that produced
-the cache took 27 min for drafts (199 on Gemini 3.1 Pro) and 12 min for 600 judge calls (Gemini 2.5
+the cache took 27 min for drafts (199 on Gemini 3.8 Flash) and 12 min for 600 judge calls (Gemini 2.5
 Flash), 4 threads each.
+
+## Appendix: smaller decisions
+
+- **Join numbered multi-tweet replies only when the number is N+1.** A child reply starting with "1:" is a new reply, not a continuation; the first pass got this wrong and left signatures mid-text.
+- **Precedence fix > policy > diagnostic > DM > ack.** A reply that both asks a question and gives a fix is a fix.
+- **Rules first, LLM second, for weak labels.** Keyword rules run with no API and seed the classifier; LLM labels override them when cached. The rule/LLM agreement is printed so the upgrade is visible.
+- **Classifier trained on weak labels, never on golden.** Golden is 200 hand labels; using them for training would leave nothing to report.
+- **`unhandleable` is a rule, applied before the classifier, always escalated, excluded from accuracy.** One rule for both annotators removes an ambiguous class from kappa.
+- **Judge sees the system's retrieved evidence for every system, including baselines.** Otherwise baselines could not be scored for groundedness at all.
+- **Golden set is half stratified, half random-by-time, reported separately.** Stratified shows per-class behaviour; random shows the traffic mix the agent would actually face.
+- **Subsample 12k threads, not all 23k.** Embedding and indexing stay under three minutes on a laptop CPU and the retrieval corpus still has 3.3k resolutions.
+- **Gemini 3.1 Pro generates, Gemini 2.5 Flash labels and judges.** `gemini-2.5-pro` is retired for new keys; the 404 was discovered on the first annotator call. Flash has the larger daily quota, which is why it does the 1,000+ bulk calls.
+- **Add a "money moved / account compromised" signal after the demo, before looking at golden.** "Charged me twice" scored 0.35 and would have auto-handled; the fix and its test were written before the first eval run.
+- **Judge evidence includes the diagnostic question bank.** The first judge pass scored diagnostic drafts 2.3 on groundedness because the questions they quote were never shown to the judge. That is a harness bug, not a system change, so it was fixed and re-judged.
+- **Promo copy, status-page text and brand-authored tweets are `unhandleable`.** Rule added to the guide after the second annotator split on five promo tweets; the system does not yet implement it, and that is failure mode 1.
+- **Each system is judged against its own evidence.** The first pass gave every system the agent's retrieved evidence, which penalised the nearest-neighbour baseline for citing a reply the judge could not see. Now the baseline's evidence is its own five nearest replies and the template baseline's evidence is the template.
+- **Cache key now includes effort and max_tokens.** Changing effort used to serve stale output. The change invalidated the old cache, so the weak labels were re-run (Gemini at temperature 0 is close to but not exactly deterministic; the label distribution is reported both times).
+- **Retrieval dedupes near-identical replies and uses a soft intent bonus instead of a hard mask.** SpotifyCares reuses the same sentences thousands of times, so top-5 was often one resolution five times; and a wrong intent no longer wipes out the evidence.
+- **The thread sample is pinned to its original population.** Rewriting turn ordering changed which threads were eligible for the seeded subsample and silently dropped 121 golden threads; eligibility is now stated explicitly (brand answered the root or a one-hop reply) and the golden files assert every thread is in the golden pool.
