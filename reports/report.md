@@ -84,16 +84,20 @@ Escalation threshold sweep (system):
 Examples are real golden items (handles and names removed). 40 escalation misses and 8 false escalations
 were reviewed by hand.
 
-**1. The `unhandleable` rule catches 6 of 15.** Gold has 15 non-actionable tweets; the rule
-(under three words, non-Latin script, a short non-English word list) fires on a few. Missed: a Dutch
-question about re-downloading playlists, a Tagalog password complaint, three Spotify promo tweets
-("Premium gives you unlimited skips. Get 3 months now for just 99p."), two brand-authored tweets ending
-in an agent signature, and two image-dependent tweets ("Can these be links please?"). Each got an intent,
-a confident reply, and an auto-handle decision. A promo tweet was answered with "Are you currently
-attending classes at an accredited higher education institution?". Hypothesis: the rule was written
-for bare mentions; the golden sample showed that noise in this dataset is mostly *other people's copy*,
-not empty tweets. Fix: a real language detector plus a "not a request" detector keyed on the signature
-regex and price-list phrasing. This single mode accounts for 9 of the 40 escalation misses.
+**1. The harness was grading labels written on the wrong text.** The first failure analysis reported
+15 non-actionable golden tweets, mostly Spotify promo copy, that the `unhandleable` rule missed. Tracing
+them showed the real bug: customers often reply to someone else's tweet (a promo, another customer), and
+prep used the thread *root* as the customer message while the agent was fed the customer's *own* tweet.
+Nine "promo tweets" in the golden set were promos the customer had replied to; the actual messages
+("I just paid for the premium and the money came out of my account but premium isn't working") were
+real requests, and my labels on them were wrong. 203 of 12,000 threads in the sample have a root by a
+different author; 494 are the customer continuing their own thread. The fix carries the exact agent
+input (`message_text`) through pairs, retrieval keys, weak labels and both golden files, and 22 golden
+rows were relabelled. Hypothesis for why it survived so long: the `turn_index == 0` filter looked like
+"first customer message" and nothing ever compared the labelled column to the evaluated column. A
+test now builds pairs from a synthetic thread with a promo root. After the fix the genuine
+non-actionable set is smaller (non-English, image-only, under three words) and the language detector
+(lingua, v2) catches Dutch and Tagalog but not romanised Indonesian chat-speak ("udh 3 hari ga bs login").
 
 **2. Family-plan problems never escalate.** Recall on `family_plan` gold escalations is 0 of 8.
 "I got charged for our family plan, I expect my family to be able to listen" scored 0.30: family_plan is
