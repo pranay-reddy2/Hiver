@@ -1,0 +1,30 @@
+# Decision log
+
+1. **SpotifyCares over AmazonHelp/AppleSupport.** Apple's and Amazon's replies are 52%+ "DM us"; Spotify's carry reinstall steps, the downloads article, licensing and country answers. Grounding needs something to ground in.
+2. **Split by thread id before anything else.** All tuning on dev; golden touched once. The harness asserts golden thread ids appear in neither corpus nor dev.
+3. **Define "inbound" as "received a SpotifyCares reply", not "mentions @SpotifyCares".** Most customers tweet at the anonymised main handle (`@115888`), so mention-based filtering would drop them.
+4. **Join numbered multi-tweet replies only when the number is N+1.** A child reply starting with "1:" is a new reply, not a continuation; the first pass got this wrong and left signatures mid-text.
+5. **Treat the reused t.co IDs as a resolution catalogue.** The dataset shortens every link, but the same ~20 IDs recur thousands of times. Mapping them by hand gives a cheap, exact groundedness check: a draft may cite only IDs present in its evidence.
+6. **Add `policy_answer` as a resolution class.** The first regex found 8% "fixes"; a third of the "other" bucket was licensing, country-waitlist and vote-for-the-idea answers. Resolution-bearing is closer to 19% than 8%.
+7. **Precedence fix > policy > diagnostic > DM > ack.** A reply that both asks a question and gives a fix is a fix.
+8. **Rules first, LLM second, for weak labels.** Keyword rules run with no API and seed the classifier; LLM labels override them when cached. The rule/LLM agreement is printed so the upgrade is visible.
+9. **Classifier trained on weak labels, never on golden.** Golden is 200 hand labels; using them for training would leave nothing to report.
+10. **Escalation is a weighted score with named signals, not an LLM call.** The reason string must be auditable and the threshold sweepable; an LLM "should we escalate?" gives neither.
+11. **Money/security intent alone does not escalate; plus any second signal it does.** A student-discount question is auto-handleable; a double-charge with "refund" is not. Weights were set so the score crosses 0.5 in the second case, after a test caught it at 0.45.
+12. **`unhandleable` is a rule, applied before the classifier, always escalated, excluded from accuracy.** One rule for both annotators removes an ambiguous class from kappa.
+13. **Threshold tuned on a proxy (historical DM redirect).** Dev has no hand escalation labels; the brand's own decision to go private is the best available stand-in and is reported as such.
+14. **Judge is Gemini 2.5 Flash while the generator is Gemini 3.1 Pro.** Different model, absolute 1–5 with anchored rubric, and human agreement on 60 items. Same family is a known limitation; the Anthropic backend is wired so a cross-family judge is one env var away.
+15. **Judge sees the system's retrieved evidence for every system, including baselines.** Otherwise baselines could not be scored for groundedness at all.
+16. **Golden set is half stratified, half random-by-time, reported separately.** Stratified shows per-class behaviour; random shows the traffic mix the agent would actually face.
+17. **Committed prompt-hash cache; `make eval` fails loudly on a miss.** Reviewers get exact numbers with no key and no silent spend; `make eval-live` is the only path that calls the API.
+18. **Subsample 12k threads, not all 23k.** Embedding and indexing stay under three minutes on a laptop CPU and the retrieval corpus still has 3.3k resolutions.
+19. **Gemini 3.1 Pro generates, Gemini 2.5 Flash labels and judges.** `gemini-2.5-pro` is retired for new keys; the 404 was discovered on the first annotator call. Flash has the larger daily quota, which is why it does the 1,000+ bulk calls.
+20. **Draft golden labels by model, flagged as such, rather than ship an unlabelled set.** Labelled with `labeler=claude-draft`; the report says so in the misleading-headline section. A human review is the first item on the next-week list.
+21. **Add a "money moved / account compromised" signal after the demo, before looking at golden.** "Charged me twice" scored 0.35 and would have auto-handled; the fix and its test were written before the first eval run.
+22. **Judge evidence includes the diagnostic question bank.** The first judge pass scored diagnostic drafts 2.3 on groundedness because the questions they quote were never shown to the judge. That is a harness bug, not a system change, so it was fixed and re-judged.
+23. **Report the better golden threshold (0.35) without adopting it.** Adopting it would be test-set tuning; hiding it would be worse.
+24. **Promo copy, status-page text and brand-authored tweets are `unhandleable`.** Rule added to the guide after the second annotator split on five promo tweets; the system does not yet implement it, and that is failure mode 1.
+25. **Each system is judged against its own evidence.** The first pass gave every system the agent's retrieved evidence, which penalised the nearest-neighbour baseline for citing a reply the judge could not see. Now the baseline's evidence is its own five nearest replies and the template baseline's evidence is the template.
+26. **Post-hoc fixes live behind `SYSTEM_VERSION=v2` and are graded on a fresh 100-item sample.** The headline stays v1. v2 makes the incident regex intent-independent and swaps the word-list language check for lingua plus promo-copy and brand-signature rules; both were motivated by golden failures, so their effect on the original 200 is reported as post-hoc and their effect on the fresh 100 as the real test.
+27. **Cache key now includes effort and max_tokens.** Changing effort used to serve stale output. The change invalidated the old cache, so the weak labels were re-run (Gemini at temperature 0 is close to but not exactly deterministic; the label distribution is reported both times).
+28. **Retrieval dedupes near-identical replies and uses a soft intent bonus instead of a hard mask.** SpotifyCares reuses the same sentences thousands of times, so top-5 was often one resolution five times; and a wrong intent no longer wipes out the evidence.

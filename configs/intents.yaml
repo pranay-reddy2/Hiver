@@ -1,0 +1,52 @@
+# Intent taxonomy for @SpotifyCares. Derived from TF-IDF KMeans (k=12) over ~25k
+# root customer tweets, hand-collapsed to 7 intents + other + unhandleable.
+# `rules` are only used for bootstrap weak labels and the trivial keyword baseline.
+intents:
+  billing_subscription:
+    description: >
+      Charges, double billing, refunds, cancelling, student discount, Hulu bundle,
+      premium not activating after payment, payment method errors, promo/trial questions.
+    rules: [charged, charge, billing, bill, refund, payment, pay, paid, cancel, subscription, student, discount, hulu, trial, premium price, invoice, "3 months", "0.99", "9.99", "£9", "$9", card, paypal]
+  family_plan:
+    description: >
+      Family plan: inviting or removing members, address verification, family invite links failing,
+      members losing premium, upgrading to family.
+    rules: [family plan, family premium, premium family, family account, family member, add my, invite, my wife, my husband, my mom, my dad, my brother, my sister, household, address]
+  account_access:
+    description: >
+      Can't log in, password reset, Facebook-linked account, username shows random characters,
+      account hacked or compromised, account disappeared, changing display name or email.
+    rules: [log in, login, logged out, password, hacked, hack, compromised, facebook, username, "display name", my name, email address, "account disappeared", "lost my account", "can't access", cant access, someone else, "not my", "sign in", signin, verify]
+  playback_app_bug:
+    description: >
+      App crashes, songs stop or skip, won't play, web player broken, desktop app issues,
+      Apple Watch/CarPlay/console/speaker integration failing, error codes, update broke something.
+    rules: [crash, crashes, crashing, keeps stopping, stops playing, won't play, wont play, "not playing", skipping, skip, freezes, freezing, error, glitch, "web player", desktop, "apple watch", carplay, chromecast, sonos, alexa, "google home", xbox, ps4, bug, update broke, "after the update", loading, buffering, "not working", doesnt work, "doesn't work", lag]
+  offline_downloads:
+    description: >
+      Downloaded songs disappeared, re-downloading repeatedly, offline mode not working,
+      SD card storage, download limits.
+    rules: [download, downloaded, downloads, offline, "sd card", storage, redownload, re-download, "re download", sync, synced]
+  content_availability:
+    description: >
+      A song, album, artist or podcast is missing, greyed out, or unavailable; release timing;
+      Spotify not available in a country; wrong song/artist metadata; licensing.
+    rules: [album, "not available", unavailable, "isn't available", "greyed out", grayed out, "not on spotify", "where is", "when will", release, licensing, "in my country", region, "not in", available in, missing, "removed from", wrong artist, "wrong song", podcast, lyrics]
+  feature_request_feedback:
+    description: >
+      Suggestions for features, complaints about design or recommendations, praise, opinions,
+      requests to change Discover Weekly or suggested songs, general feedback with no bug.
+    rules: [please add, "you should", feature, "would be nice", "would be great", suggestion, "i wish", "why can't we", "why cant we", "discover weekly", "suggested songs", "release radar", "daily mix", shuffle, "dislike button", "sort by", love, awesome, "thank you", thanks, hate the new, "new update sucks", ui, design, wrapped]
+  other:
+    description: >
+      A real question or request that fits none of the above: artist profile via a distributor,
+      contests or promotions, jobs, partnerships, general "how do I" questions.
+    rules: []
+  unhandleable:
+    description: >
+      No actionable content: bare mention, image-only tweet, non-English text, or fewer than
+      three real words after removing handles and URLs.
+    rules: []
+
+# Intents where money or account security is at stake. Used by the escalation scorer.
+sensitive_intents: [billing_subscription, account_access]

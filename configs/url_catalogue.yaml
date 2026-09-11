@@ -1,0 +1,26 @@
+# The dataset shortens every link to t.co, but @SpotifyCares reused the same handful of
+# links thousands of times, so the shortened IDs act as a de facto resolution catalogue.
+# Names below were inferred from the surrounding reply text; see report §Decision log.
+catalogue:
+  ldFdZRiNAt: dm_link            # "DM us your email/username" (10k uses)
+  ldFdZR1cbT: dm_link
+  0i8GpimuDa: content_licensing_faq
+  38J7tFlIBF: downloads_removed_article
+  EqisDMwZAT: reinstall_article
+  X8DVSX9QgM: country_launch_waitlist
+  ZgU70TbP8M: email_support_other_languages
+  LgAM6ky9Vv: unknown_support_article_1
+  3h0TnPWP0c: unknown_support_article_2
+  m4HWSbgHVZ: closing_gif
+  FQulrDtFky: closing_gif
+  LpsmyUtme0: unknown_support_article_3
+  rtDvYZOF32: unknown_support_article_4
+  Z9OErWpTNz: community_idea_vote
+  9x0iGXxLD1: community_idea_vote
+  SEK4E4gi22: community_idea_vote
+  VMrgnGpB4G: content_licensing_faq
+  MEjmIRL2eB: content_licensing_faq
+  DzfTSK1S9k: country_launch_waitlist
+  kGiZgGf5eZ: about_the_app
+  UaTP1wYNiD: unknown_link
+  PDA2aKzC6Q: reinstall_article

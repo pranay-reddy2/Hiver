@@ -1,0 +1,12 @@
+.venv/
+data/raw/
+data/processed/*.npy
+data/processed/*.pkl
+__pycache__/
+*.pyc
+.pytest_cache/
+models/
+.DS_Store
+.env
+!models/params.json
+reports/*_partial*
