@@ -106,7 +106,7 @@ Escalation, one-rule baseline vs the six-signal scorer (re-scored from stored si
   | brand_voice | 0.0 (all 5s) | 0.98 |
   | safety_scope | undefined (all 5s) | 1.0 |
 
-  The fit spread (4 ones, 9 twos, 9 threes, 14 fours, 24 fives) yields a quadratic-weighted kappa of 0.56 (80% within 1 point), confirming the LLM judge's fit signal corresponds to genuine quality distinctions rather than random variation. Groundedness shows moderate agreement (kappa 0.50, 93% within 1 point). Brand voice and safety scope are saturated at 5 for nearly all drafts in both human and judge scoring.
+  The fit spread (4 ones, 9 twos, 9 threes, 14 fours, 24 fives) yields a quadratic-weighted kappa of 0.56 (80% within 1 point): moderate agreement, which supports but does not establish that the judge's fit signal tracks real quality differences. Groundedness shows moderate agreement (kappa 0.50, 93% within 1 point). Brand voice and safety scope are saturated at 5 for nearly all drafts in both human and judge scoring.
 - **Second judge.** Gemini 3.5 Flash re-judging the 188 drafts agrees with 2.5 Flash on fit at
   quadratic-weighted kappa 0.68 (Spearman 0.59). On the other three axes both judges give 4–5 to
   90–100% of drafts, so kappa is undefined or zero (`reports/judge_gemini-3.5-flash.csv`).
@@ -175,8 +175,8 @@ romanised text.
   reviewed by hand (Pranay Reddy); 3 of 200 intents were overturned vs. the initial model draft (1.5%
   overturn rate: `g002` year-in-music to `other`, `g061` save-vs-download to `offline_downloads`, `g099`
   Stranger Things mode to `playback_app_bug`; 0 escalations changed). The 60 reply ratings in
-  `human_reply_ratings.csv` were scored by hand (Pranay Reddy), confirming usable judge agreement on
-  resolution fit (weighted kappa 0.56, 80% within 1 point). However, three gaps remain: (1) the 100
+  `human_reply_ratings.csv` were scored by hand (Pranay Reddy), giving moderate judge agreement on
+  resolution fit (weighted kappa 0.56, 80% within 1 point), a single rater with no second human. However, three gaps remain: (1) the 100
   fresh-sample labels (`golden2_labels.csv`) remain a model draft (`claude-draft`); (2) the
   second-annotator pass on the 50-item sample was done by Gemini 2.5 Pro, so the reported 0.79 / 0.64
   kappa is model–model agreement rather than human–human; and (3) the 100 filter precision checks
