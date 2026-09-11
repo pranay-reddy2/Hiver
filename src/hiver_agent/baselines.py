@@ -86,7 +86,7 @@ def main() -> None:
     labels = pd.read_parquet(C.PROCESSED / "weak_labels.parquet")
     roots = pairs[(pairs.turn_index == 0) & (pairs.split == "corpus")].merge(labels[["thread_id", "weak_intent"]], on="thread_id")
     roots = roots[roots.weak_intent != "unhandleable"]
-    train_simple(roots.root_text.tolist(), roots.weak_intent.tolist())
+    train_simple(roots.message_text.tolist(), roots.weak_intent.tolist())
     print(f"simple baseline trained on {len(roots)} -> {SIMPLE_PATH}")
 
 

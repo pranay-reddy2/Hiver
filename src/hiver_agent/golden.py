@@ -27,7 +27,7 @@ def sample(n_strat: int = 100, n_random: int = 100, seed: int = C.SEED, exclude_
     pool = pool[pool.turn_index == 0].copy()
     if exclude_thread_ids is not None:
         pool = pool[~pool.thread_id.isin(set(int(t) for t in exclude_thread_ids))]
-    pool["rule_intent"] = pool.root_text.map(rule_label)
+    pool["rule_intent"] = pool.message_text.map(rule_label)
     rng = np.random.default_rng(seed)
 
     strata = [i for i in C.INTENTS if i != "unhandleable"]
@@ -50,8 +50,8 @@ def sample(n_strat: int = 100, n_random: int = 100, seed: int = C.SEED, exclude_
 
     out = pd.concat([strat, rand]).sample(frac=1, random_state=seed + 2).reset_index(drop=True)
     out.insert(0, "item_id", [f"{prefix}{i:03d}" for i in range(len(out))])
-    cols = ["item_id", "thread_id", "created_at", "sample_strategy", "customer_raw", "root_text", "brand_text"]
-    out = out[cols].rename(columns={"root_text": "customer_clean", "brand_text": "historical_reply"})
+    cols = ["item_id", "thread_id", "created_at", "sample_strategy", "customer_raw", "message_text", "brand_text"]
+    out = out[cols].rename(columns={"message_text": "message", "brand_text": "historical_reply"})
     for c in LABEL_COLS:
         out[c] = ""
     return out

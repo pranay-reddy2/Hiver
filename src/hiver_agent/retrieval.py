@@ -99,7 +99,7 @@ def build(pairs: pd.DataFrame, labels: pd.DataFrame) -> Retriever:
         counts = Counter(grp.brand_text.str.replace(r"^(Hey|Hi)[^!.,]*[!.,]\s*", "", regex=True))
         bank[intent] = [q for q, _ in counts.most_common(3)]
     bank["_global"] = [q for q, _ in Counter(diag.brand_text).most_common(3)]
-    keep_cols = ["thread_id", "query_text", "root_text", "brand_text", "category", "weak_intent", "turn_index"]
+    keep_cols = ["thread_id", "query_text", "message_text", "brand_text", "category", "weak_intent", "turn_index"]
     return Retriever(res[keep_cols], vec, bank, corpus[keep_cols], all_vec)
 
 

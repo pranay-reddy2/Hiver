@@ -25,9 +25,9 @@ def main(n: int = 400) -> None:
     dev = dev[dev.turn_index == 0].sample(min(n, len(dev[dev.turn_index == 0])), random_state=C.SEED)
     dev["proxy_escalate"] = dev.brand_text.map(categorise) == "dm_redirect"
     clf, ret = IntentClassifier.load(), Retriever.load()
-    preds = clf.predict(dev.root_text.tolist())
+    preds = clf.predict(dev.message_text.tolist())
     top_sims, feats = [], []
-    for (intent, conf), text in zip(preds, dev.root_text, strict=True):
+    for (intent, conf), text in zip(preds, dev.message_text, strict=True):
         ex = ret.search(text, k=5, intent=intent) if intent != "unhandleable" else None
         top_sims.append(float(ex.similarity.max()) if ex is not None else 0.0)
         feats.append((text, intent, conf, ex, ret.dm_share(text) if ex is not None else 0.0))

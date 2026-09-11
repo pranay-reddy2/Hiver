@@ -127,8 +127,8 @@ def main() -> None:
 
     pairs = load_pairs()
     roots = pairs[(pairs.turn_index == 0) & pairs.split.isin(["corpus", "dev"])].copy()
-    roots["rule_intent"] = roots.root_text.map(rule_label)
-    roots["weak_intent"] = weak_labels(roots)
+    roots["rule_intent"] = roots.message_text.map(rule_label)
+    roots["weak_intent"] = weak_labels(roots, text_col="message_text")
     llm = get_llm()
     llm.fail_on_misses()  # never silently train on rule labels because the cache was cold
     print(llm.report_misses())

@@ -102,15 +102,19 @@ def build_pairs(full: pd.DataFrame, brand: str = C.BRAND) -> pd.DataFrame:
         reply_text, n_parts = _join_continuations(r, by_id, brand)
         root_id, depth = _root_of(int(cust.tweet_id), by_id)
         root = by_id.get(root_id)
+        # Turn index counts the customer's own prior tweets that the brand answered in this thread,
+        # not raw depth: customers reply to promos, to other customers, and to themselves.
+        same_author_root = root is not None and root.author_id == cust.author_id
         rows.append(
             {
                 "thread_id": root_id,
                 "customer_tweet_id": int(cust.tweet_id),
                 "brand_tweet_id": int(r.tweet_id),
-                "turn_index": depth // 2,
+                "depth": depth,
+                "same_author_root": bool(same_author_root),
                 "created_at": cust.created_at,
                 "customer_raw": cust.text,
-                "root_raw": root.text if root is not None else cust.text,
+                "root_raw": root.text if same_author_root else cust.text,
                 "brand_raw": reply_text,
                 "n_parts": n_parts,
             }
@@ -120,11 +124,16 @@ def build_pairs(full: pd.DataFrame, brand: str = C.BRAND) -> pd.DataFrame:
     pairs["customer_text"] = pairs.customer_raw.map(clean_customer)
     pairs["root_text"] = pairs.root_raw.map(clean_customer)
     pairs["brand_text"] = pairs.brand_raw  # already cleaned per part in _join_continuations
-    pairs["query_text"] = np.where(
-        pairs.turn_index == 0, pairs.root_text, pairs.root_text + " || " + pairs.customer_text
-    )
-    pairs["unhandleable"] = pairs.customer_text.map(is_unhandleable)
-    pairs["customer_hash"] = pairs.customer_text.map(text_hash)
+    # turn_index: 0 when this is the first brand-answered tweet in the customer's thread.
+    brand_answered = pairs.groupby("thread_id").customer_tweet_id.rank(method="first").astype(int) - 1
+    pairs["turn_index"] = brand_answered
+    # message_text is exactly what the agent sees: the customer's tweet, prefixed by their own
+    # earlier root tweet when they are continuing a thread the brand has not answered yet.
+    continuation = (pairs.turn_index == 0) & pairs.same_author_root & (pairs.root_text != pairs.customer_text)
+    pairs["message_text"] = np.where(continuation, pairs.root_text + " || " + pairs.customer_text, pairs.customer_text)
+    pairs["query_text"] = np.where(pairs.turn_index == 0, pairs.message_text, pairs.root_text + " || " + pairs.customer_text)
+    pairs["unhandleable"] = pairs.message_text.map(is_unhandleable)
+    pairs["customer_hash"] = pairs.message_text.map(text_hash)
     # Dedupe exact-duplicate customer texts (retweets, spam) keeping the earliest.
     pairs = pairs.sort_values("created_at").drop_duplicates("customer_hash", keep="first")
     return pairs.reset_index(drop=True)

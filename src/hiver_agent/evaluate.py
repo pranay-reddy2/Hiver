@@ -119,7 +119,7 @@ def run_system(system, rows: pd.DataFrame, draft_reply: bool = True) -> pd.DataF
     is_agent = isinstance(system, SupportAgent)
     out = []
     for r in rows.itertuples(index=False):  # classify + retrieve serially (local models)
-        res = system.handle(r.customer_raw, draft_reply=False) if is_agent else system.handle(r.customer_raw)
+        res = system.handle(r.message, draft_reply=False) if is_agent else system.handle(r.message)
         res["item_id"] = r.item_id
         out.append(res)
     if is_agent and draft_reply:  # LLM drafts in parallel
@@ -139,7 +139,7 @@ def judge_frame(preds: pd.DataFrame, gold: pd.DataFrame, model: str | None = Non
         if not isinstance(r.reply, str) or not r.reply:
             return {"item_id": r.item_id, **{a: None for a in AXES}}
         evidence = list(r.evidence or []) + [f"(historical diagnostic question) {q}" for q in (getattr(r, "questions", None) or [])]
-        j = judge(gold_by_id.loc[r.item_id].customer_clean, r.reply, evidence, r.intent, **kw)
+        j = judge(gold_by_id.loc[r.item_id].message, r.reply, evidence, r.intent, **kw)
         return {"item_id": r.item_id, **({a: j[a] for a in AXES} if j else {a: None for a in AXES})}
 
     with ThreadPoolExecutor(max_workers=WORKERS) as pool:

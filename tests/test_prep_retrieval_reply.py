@@ -32,6 +32,7 @@ def test_continuation_joining_and_root_finding():
     assert first.brand_text == "Sorry! Check the steps at [link:38J7tFlIBF] And let us know how it goes"  # signatures and numbering gone
     later = pairs[pairs.customer_tweet_id == 4].iloc[0]
     assert later.thread_id == 1 and later.turn_index == 1 and later.query_text.startswith("my downloads vanished ||")
+    assert first.message_text == "my downloads vanished"  # turn 0, own root: message is the tweet itself
     # a child starting with "1:" is a new reply, not a continuation of another "1:"
     second = pairs[pairs.customer_tweet_id == 6].iloc[0]
     assert second.n_parts == 1 and "country" not in second.brand_text

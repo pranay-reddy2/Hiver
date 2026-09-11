@@ -25,7 +25,7 @@ def cmd_filter_check(args):
     pairs = load_pairs("corpus")
     pairs["category"] = pairs.brand_text.map(categorise)
     adm = pairs[pairs.category.isin(["fix_steps", "policy_answer"])].sample(100, random_state=C.SEED)
-    out = adm[["thread_id", "category", "root_text", "brand_text"]].copy()
+    out = adm[["thread_id", "category", "message_text", "brand_text"]].copy()
     out["is_real_resolution"] = ""
     path = C.GOLDEN / "filter_precision_check.csv"
     if path.exists():
@@ -49,7 +49,7 @@ def cmd_judge_sheet(args):
     gold = pd.read_csv(C.GOLDEN / "golden_labels.csv", dtype=str)
     m = gold.merge(preds, on="item_id", suffixes=("_gold", ""))
     m = m[m.reply.notna()].sample(min(60, int(m.reply.notna().sum())), random_state=C.SEED)
-    sheet = m[["item_id", "customer_clean", "intent", "reply", "retrieved"]].copy()
+    sheet = m[["item_id", "message", "intent", "reply", "evidence"]].copy()
     for a in AXES:
         sheet[a] = ""
     path = C.GOLDEN / "human_reply_ratings.csv"

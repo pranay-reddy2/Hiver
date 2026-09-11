@@ -71,7 +71,7 @@ def main() -> None:
     roots = roots[roots.weak_intent != "unhandleable"]
     tr = roots[roots.split == "corpus"]
     dv = roots[roots.split == "dev"]
-    clf, info = train(tr.root_text.tolist(), tr.weak_intent.tolist(), dv.root_text.tolist(), dv.weak_intent.tolist())
+    clf, info = train(tr.message_text.tolist(), tr.weak_intent.tolist(), dv.message_text.tolist(), dv.weak_intent.tolist())
     clf.save()
     print(info, "->", MODEL_PATH)
 
