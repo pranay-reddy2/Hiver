@@ -1,15 +1,32 @@
+# environment and secrets
 .venv/
+.env
+
+# raw dataset (~180 MB zip + csv; `make data` fetches it)
 data/raw/
+
+# derived artefacts rebuilt by `make build` (pairs/splits/weak_labels parquet stay committed)
 data/processed/*.npy
 data/processed/*.pkl
+models/*
+!models/params.json
+
+# incomplete evaluation runs (offline with cache misses)
+reports/*_partial*
+
+# python / tooling
 __pycache__/
 *.pyc
-.pytest_cache/
-models/
-.DS_Store
-.env
-!models/params.json
-reports/*_partial*
+*.egg-info/
+build/
+dist/
 .pytest_cache/
 .ruff_cache/
-*.egg-info/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# editors / os
+.idea/
+.vscode/
+.DS_Store
+*.log
