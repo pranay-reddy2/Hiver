@@ -37,3 +37,16 @@ def test_escalation_reasons_and_threshold():
     assert r.escalate and "changed hands" in r.reason
     r = score("does the student discount work with an ISIC card", "billing_subscription", 0.9, _examples(0.8), 0.5)
     assert not r.escalate
+
+
+def test_ablation_has_one_rule_baseline():
+    import pandas as pd
+
+    from hiver_agent.evaluate import signal_ablation
+
+    sig = {k: False for k in ["sensitive_intent", "money_or_security_incident", "low_confidence", "weak_retrieval", "hostile_or_urgent", "needs_private_data", "repeat_contact"]}
+    m = pd.DataFrame({"escalate_gold": [True, False, True], "signals": [{**sig, "sensitive_intent": True}, {**sig, "sensitive_intent": True}, {"unhandleable": True}]})
+    out = signal_ablation(m, threshold=0.3)
+    assert out["sensitive_intent_only"]["recall"] == 1.0
+    assert out["sensitive_intent_only"]["precision"] == round(2 / 3, 3)
+    assert out["full"]["escalation_rate"] == 1.0  # at 0.30 the sensitive intent alone escalates

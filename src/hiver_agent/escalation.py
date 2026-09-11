@@ -13,8 +13,11 @@ import pandas as pd
 
 from . import config as C
 
-# Weights sum to 1.35 and the score is capped at 1.0. Money/security intent alone (a pricing
-# question) stays under the 0.45 threshold; with any second signal it crosses.
+# Weights sum to 1.35 and the score is capped at 1.0. The weights were designed for a 0.45
+# threshold, where a money/security intent alone (0.35, e.g. a pricing question) does not escalate
+# and any second signal crosses. The dev proxy sweep (tune.py) chose 0.30 instead, and at 0.30 the
+# sensitive intent escalates on its own. The shipped threshold lives in models/params.json; the
+# `sensitive_intent_only` row of the ablation in reports/results.md shows what that costs.
 WEIGHTS = {
     "sensitive_intent": 0.35,
     "money_or_security_incident": 0.25,

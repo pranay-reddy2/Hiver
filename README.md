@@ -12,7 +12,7 @@ dataset. For each incoming customer tweet it:
 | deliverable | where |
 |---|---|
 | Runnable pipeline, headline numbers in under 15 minutes | this README, next section |
-| Golden evaluation set + how it was sampled and labelled | [`data/golden/README.md`](data/golden/README.md), `golden_labels.csv` (200), `golden2_labels.csv` (fresh 100 for post-hoc fixes) |
+| Golden evaluation set + how it was sampled and labelled | [`data/golden/README.md`](data/golden/README.md), `golden_labels.csv` (200), `golden2_labels.csv` (fresh 100 for post-hoc fixes). **Labels are currently a model draft; `make label-status` says so** |
 | Evaluation harness: automated metrics | [`src/hiver_agent/evaluate.py`](src/hiver_agent/evaluate.py), output `reports/results.md` |
 | LLM-as-judge rubric and judge-vs-human agreement | [`configs/rubric.md`](configs/rubric.md), [`src/hiver_agent/judge.py`](src/hiver_agent/judge.py), `make judge-agreement` on `data/golden/human_reply_ratings.csv` |
 | Report: framing, results vs two baselines, top-5 failures, misleading headline, next week | [`reports/report.md`](reports/report.md) |
@@ -23,7 +23,7 @@ dataset. For each incoming customer tweet it:
 ```bash
 cp .env.example .env   # add GEMINI_API_KEY only if you plan to run `make eval-live`
 make setup          # uv venv + pinned deps from uv.lock (or: python -m venv .venv && .venv/bin/pip install -e ".[dev]")
-make data           # ~177 MB Kaggle zip, no login required
+make data           # ~177 MB Kaggle zip; tries the unauthenticated URL, then the kaggle CLI (needs ~/.kaggle/kaggle.json)
 make build          # prep -> split -> weak labels -> train -> index -> baselines -> tune  (~3 min, CPU)
 make eval           # golden-set metrics from the committed LLM cache; no API key needed
 ```
@@ -33,14 +33,36 @@ code 2 and prints how many calls are missing. `make eval-live` (with `GEMINI_API
 those calls and appends them to the cache.
 
 Measured on a clean clone (MacBook Air, M-series, CPU only): `make setup` about 1 min (wheel download),
-`make build` 54 s, `make eval` 18 s with zero cache misses, `make test` 5 s. The 177 MB dataset download
+`make build` 54 s, `make eval` about 30 s with zero cache misses, `make test` 5 s. The 177 MB dataset download
 is on top of that. No API key is needed for any of it.
 
-## Try it
+## What it does
+
+One golden item (`g` set, cached; `reports/preds_system.csv` has all 200):
+
+```
+message   Spotify, i've had your premium service on Windows phone for 3 or 4 days now. None of
+          these days have i had no crashes. Shame on u all for making groove music customers
+          move to this unusable app! #premiumuser
+intent    playback_app_bug (confidence 0.80)
+evidence  "Hey James! Could you try a quick reinstall for us? Just follow the steps here:
+          [link:EqisDMwZAT]. Let us know how this goes"  (+4 more retrieved replies)
+reply     Hey there! Could you try a quick reinstall for us? Just follow the steps here:
+          [link:EqisDMwZAT]. Let us know how it goes.        (mode: fix, links grounded: yes)
+decision  Auto-handle: no escalation signals fired            (score 0.00 < 0.30)
+```
 
 ```bash
 make demo MSG="my downloaded songs keep disappearing from my phone"   # runs live: a new message is never in the cache
 ```
+
+## Label provenance (read before trusting any number)
+
+Every golden label was drafted by a model and is marked as such; the human review, second-annotator
+sheet, 60 reply ratings and 100 filter checks are the open items. `make label-status` prints exactly
+what has and has not been done, and the top line of `reports/results.md` repeats it. The model draft
+is kept in `draft_intent` / `draft_escalate` so the review's overturn rate is reported automatically.
+The procedure is in [`data/golden/README.md`](data/golden/README.md).
 
 ## Other targets
 
@@ -49,6 +71,7 @@ make demo MSG="my downloaded songs keep disappearing from my phone"   # runs liv
 | `make eval-v2` | the post-hoc escalation / unhandleable fixes on the same golden set (reported, never the headline) |
 | `make eval-fresh` | v1 vs v2 on a fresh 100-item sample (`golden2_labels.csv`), decisions only |
 | `make judge-cross` | re-judge the drafts with a second model (default `gemini-3.5-flash`); prints judge-judge agreement |
+| `make label-status` | who wrote the labels, overturn rate vs the model draft, how many ratings / filter checks are filled |
 | `make agreement` / `make judge-agreement` / `make filter-precision` | human-agreement numbers once the CSVs under `data/golden/` are filled |
 | `make test` / `make lint` | pytest (15 tests) and ruff |
 
@@ -66,7 +89,7 @@ make demo MSG="my downloaded songs keep disappearing from my phone"   # runs liv
 | `src/hiver_agent/escalation.py` | six weighted signals → score → decision + reason |
 | `src/hiver_agent/baselines.py` | trivial (majority / template / never escalate) and simple (TF-IDF+LR / nearest neighbour / keywords) |
 | `src/hiver_agent/judge.py` | LLM judge on the anchored rubric in `configs/rubric.md`; human-agreement stats |
-| `src/hiver_agent/evaluate.py` | the harness; writes `reports/results.{json,md}` and per-system prediction CSVs |
+| `src/hiver_agent/evaluate.py` | the harness; writes `reports/results.{json,md}` and per-system prediction CSVs. Includes the one-rule escalation baseline, a judge-free reference-similarity metric, and the label-provenance line |
 | `src/hiver_agent/tune.py` | escalation / similarity thresholds swept on dev (proxy target, see report) |
 | `src/hiver_agent/golden.py` | golden-set sampling and annotator agreement |
 | `data/golden/` | golden candidates, labels, second-annotator sheet, reply ratings, labelling guide |

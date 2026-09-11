@@ -76,6 +76,18 @@
     "proxy": "historical reply was dm_redirect"
   },
   "system_version": "v1",
+  "label_provenance": {
+    "labeler": {
+      "claude-draft (review each row)": 200
+    },
+    "overturned_vs_model_draft": {
+      "n": 0,
+      "rate": 0.0,
+      "intent": 0,
+      "escalate": 0
+    },
+    "human_labelled": false
+  },
   "systems": {
     "trivial": {
       "intent": {
@@ -428,6 +440,11 @@
             "gold_rate": 0.4
           }
         }
+      },
+      "reference_similarity": {
+        "n": 200,
+        "mean": 0.463,
+        "mean_incl_missing_as_0": 0.463
       },
       "judge": {
         "groundedness": 4.96,
@@ -788,6 +805,11 @@
             "gold_rate": 0.4
           }
         }
+      },
+      "reference_similarity": {
+        "n": 200,
+        "mean": 0.472,
+        "mean_incl_missing_as_0": 0.472
       },
       "judge": {
         "groundedness": 4.8,
@@ -1175,6 +1197,11 @@
           }
         }
       },
+      "reference_similarity": {
+        "n": 188,
+        "mean": 0.453,
+        "mean_incl_missing_as_0": 0.426
+      },
       "escalation_threshold_sweep": {
         "0.2": {
           "precision": 0.536,
@@ -1199,6 +1226,12 @@
         }
       },
       "signal_ablation": {
+        "sensitive_intent_only": {
+          "precision": 0.697,
+          "recall": 0.648,
+          "f1": 0.672,
+          "escalation_rate": 0.33
+        },
         "full": {
           "precision": 0.683,
           "recall": 0.789,
@@ -1299,6 +1332,14 @@
       ],
       "p_diff_le_0": 0.0
     },
+    "reference_similarity": {
+      "diff": -0.046,
+      "ci95": [
+        -0.088,
+        -0.005
+      ],
+      "p_diff_le_0": 0.984
+    },
     "judge_groundedness": {
       "diff": -0.25,
       "ci95": [
@@ -1333,5 +1374,5 @@
     }
   },
   "llm_cache": "llm cache: 0 misses",
-  "wall_seconds": 618.5
+  "wall_seconds": 23.1
 }

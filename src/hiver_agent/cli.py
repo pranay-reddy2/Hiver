@@ -105,6 +105,7 @@ def main(argv=None):
     for name, mod in [("prep", "prep"), ("split", "split"), ("labels", "labels"), ("train", "classifier"), ("index", "retrieval"), ("baselines", "baselines"), ("tune", "tune")]:
         sub.add_parser(name).set_defaults(func=lambda a, mod=mod: __import__(f"hiver_agent.{mod}", fromlist=["main"]).main())
     sub.add_parser("golden-sample").set_defaults(func=lambda a: __import__("hiver_agent.golden", fromlist=["main"]).main("sample"))
+    sub.add_parser("label-status").set_defaults(func=lambda a: __import__("hiver_agent.golden", fromlist=["main"]).main("status"))
     sub.add_parser("agreement").set_defaults(func=lambda a: __import__("hiver_agent.golden", fromlist=["main"]).main("agreement"))
     sub.add_parser("filter-check").set_defaults(func=cmd_filter_check)
     sub.add_parser("filter-precision").set_defaults(func=cmd_filter_precision)

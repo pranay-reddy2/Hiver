@@ -1,10 +1,21 @@
 # results: golden set n=200, system version v1
 
+Label provenance: claude-draft (review each row): 200  **(model-drafted labels; every number below is agreement with a model's reading of the guide)**
+Rows changed from the model draft: 0 of 200 (0.0); intent 0, escalate 0
+
 | system | intent acc (95% CI) | macro-F1 | esc. precision | esc. recall | esc. F1 | esc. rate | judge groundedness | judge resolution_fit | judge brand_voice | judge safety_scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | trivial | 0.233 (0.176–0.295) | 0.047 | 0.0 | 0.0 | 0.0 | 0.0 | 4.96 | 4.04 | 4.99 | 4.86 |
 | simple | 0.731 (0.668–0.788) | 0.724 | 0.885 | 0.324 | 0.474 | 0.13 | 4.8 | 4.03 | 4.88 | 4.96 |
 | system | 0.751 (0.689–0.813) | 0.758 | 0.683 | 0.789 | 0.732 | 0.41 | 4.78 | 4.64 | 4.99 | 5.0 |
+
+Reference similarity (MiniLM cosine between the reply and the reply the brand actually sent; judge-free):
+
+| system | n with reply | mean | mean, missing reply = 0 |
+|---|---|---|---|
+| trivial | 200 | 0.463 | 0.463 |
+| simple | 200 | 0.472 | 0.472 |
+| system | 188 | 0.453 | 0.426 |
 
 System minus simple baseline, paired bootstrap (2000 resamples):
 
@@ -12,6 +23,7 @@ System minus simple baseline, paired bootstrap (2000 resamples):
 |---|---|---|---|
 | intent_accuracy | +0.021 | [-0.032, +0.078] | 0.261 |
 | escalation_f1 | +0.258 | [+0.130, +0.395] | 0.0 |
+| reference_similarity | -0.046 | [-0.088, -0.005] | 0.984 |
 | judge_groundedness | -0.250 | [-0.480, -0.030] | 0.993 |
 | judge_resolution_fit | +0.390 | [+0.100, +0.680] | 0.003 |
 | judge_brand_voice | -0.130 | [-0.290, +0.020] | 0.96 |
@@ -36,10 +48,11 @@ Escalation recall by gold intent (system):
 | playback_app_bug | 3 | 0.0 |
 | unhandleable | 7 | 0.57 |
 
-Signal ablation (system, drop one signal):
+Signal ablation (system, drop one signal; `sensitive_intent_only` is the one-rule baseline):
 
 | config | precision | recall | F1 | rate |
 |---|---|---|---|---|
+| sensitive_intent_only | 0.697 | 0.648 | 0.672 | 0.33 |
 | full | 0.683 | 0.789 | 0.732 | 0.41 |
 | without_sensitive_intent | 0.766 | 0.507 | 0.61 | 0.235 |
 | without_money_or_security_incident | 0.683 | 0.789 | 0.732 | 0.41 |
@@ -62,7 +75,7 @@ Intent confusion (system; rows = gold, cols = predicted):
 | feature_request_feedback | 3 | 0 | 2 | 6 | 0 | 6 | 25 | 3 |
 | other | 0 | 0 | 1 | 3 | 2 | 2 | 1 | 8 |
 
-Unhandleable detection: gold n=7, recall=0.0, false positives=0
+Unhandleable detection by the classifier rule: gold n=7, recall=0.0, false positives=0 (escalation recall on those rows is in the per-intent table above; other signals can still escalate them)
 
 By sample strategy (intent accuracy / escalation F1):
 
@@ -78,4 +91,4 @@ Reply cache misses: 0
 
 Gold escalation rate: 0.355
 llm cache: 0 misses
-Wall time: 618.5s
+Wall time: 23.1s

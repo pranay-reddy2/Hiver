@@ -8,6 +8,8 @@ The labelling guide is data/golden/README.md. Labels are typed into golden_label
 """
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pandas as pd
 
@@ -89,6 +91,32 @@ def annotator_agreement(a: pd.DataFrame, b: pd.DataFrame) -> dict:
     return res
 
 
+def label_status() -> dict:
+    """What a human has and has not done yet: label provenance and overturn rate for both golden
+    files, the second-annotator sheet, the reply-rating sheet, and the filter precision check."""
+    from .evaluate import label_provenance
+
+    out = {}
+    for name in ("golden_labels.csv", "golden2_labels.csv"):
+        path = C.GOLDEN / name
+        if path.exists():
+            out[name] = label_provenance(load_labels(path))
+    if ANNOTATOR2.exists():
+        a2 = pd.read_csv(ANNOTATOR2, dtype=str).fillna("")
+        out["annotator2_labels.csv"] = {"n": int((a2.intent.str.strip() != "").sum()), "labeler": a2.labeler.value_counts().to_dict() if "labeler" in a2 else {}}
+    if REPLY_RATINGS.exists():
+        rr = pd.read_csv(REPLY_RATINGS, dtype=str).fillna("")
+        out["human_reply_ratings.csv"] = {"rated": int((rr.resolution_fit.str.strip() != "").sum()), "of": int(len(rr))}
+    fp = C.GOLDEN / "filter_precision_check.csv"
+    if fp.exists():
+        f = pd.read_csv(fp, dtype=str).fillna("")
+        out["filter_precision_check.csv"] = {"checked": int((f.is_real_resolution.str.strip() != "").sum()), "of": int(len(f))}
+    out["human_evidence_present"] = bool(
+        out.get("golden_labels.csv", {}).get("human_labelled") and out.get("human_reply_ratings.csv", {}).get("rated", 0) > 0
+    )
+    return out
+
+
 def main(cmd: str = "sample") -> None:
     if cmd == "sample":
         df = sample()
@@ -107,10 +135,10 @@ def main(cmd: str = "sample") -> None:
             raise SystemExit(f"{path} exists; delete it to resample")
         df.to_csv(path, index=False)
         print(f"{len(df)} fresh candidates -> {path}")
+    elif cmd == "status":
+        print(json.dumps(label_status(), indent=2))
     elif cmd == "agreement":
         a, b = load_labels(LABELS), load_labels(ANNOTATOR2)
-        import json
-
         print(json.dumps(annotator_agreement(a, b), indent=2))
 
 

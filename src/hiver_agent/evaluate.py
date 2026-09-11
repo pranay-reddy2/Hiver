@@ -85,14 +85,45 @@ def escalation_metrics(gold: pd.Series, pred: pd.Series) -> dict:
     return {"precision": round(float(p), 3), "recall": round(float(r), 3), "f1": round(float(f), 3), "escalation_rate": round(float(pred.mean()), 3), "gold_rate": round(float(gold.mean()), 3)}
 
 
+def reference_similarity(replies: pd.Series, references: pd.Series) -> pd.Series:
+    """Cosine similarity (MiniLM) between each draft and the reply the brand actually sent to that
+    customer. Judge-free and reference-based; a missing draft scores 0."""
+    from .embed import embed
+
+    mask = replies.notna() & (replies.astype(str).str.strip() != "")
+    out = pd.Series(0.0, index=replies.index)
+    if mask.any():
+        a = embed(replies[mask].astype(str).tolist())
+        b = embed(references[mask].astype(str).tolist())
+        out[mask] = (a * b).sum(axis=1)
+    return out.round(4)
+
+
+def label_provenance(gold: pd.DataFrame) -> dict:
+    """Who wrote the labels, and how many rows the reviewer changed from the model draft."""
+    out = {"labeler": gold.labeler.value_counts().to_dict() if "labeler" in gold else {"unknown": int(len(gold))}}
+    if "draft_intent" in gold and "draft_escalate" in gold:
+        draft_esc = gold.draft_escalate.str.strip().str.lower().isin(["y", "yes", "1", "true"])
+        changed = (gold.intent != gold.draft_intent) | (gold.escalate != draft_esc)
+        out["overturned_vs_model_draft"] = {"n": int(changed.sum()), "rate": round(float(changed.mean()), 3),
+                                            "intent": int((gold.intent != gold.draft_intent).sum()), "escalate": int((gold.escalate != draft_esc).sum())}
+    out["human_labelled"] = not any(("draft" in str(k).lower()) or ("model" in str(k).lower()) or ("gemini" in str(k).lower()) or ("claude" in str(k).lower()) for k in out["labeler"])
+    return out
+
+
 def per_intent_recall(m: pd.DataFrame) -> dict:
     g = m[m.escalate_gold]
     return {k: {"n": int(len(v)), "recall": round(float(v.escalate.mean()), 2)} for k, v in g.groupby("intent_gold")}
 
 
 def signal_ablation(m: pd.DataFrame, threshold: float) -> dict:
-    """Drop one signal at a time and re-score from stored signals. `unhandleable` rows keep their rule."""
+    """Drop one signal at a time and re-score from stored signals. `unhandleable` rows keep their rule.
+    Also scores `sensitive_intent_only`: escalate iff the intent is billing/account (or unhandleable),
+    the one-rule baseline the six-signal scorer has to beat."""
     out = {}
+    only = [bool(s.get("unhandleable") or s.get("sensitive_intent")) for s in m.signals]
+    e = escalation_metrics(m.escalate_gold, pd.Series(only, index=m.index))
+    out["sensitive_intent_only"] = {k: e[k] for k in ("precision", "recall", "f1", "escalation_rate")}
     for drop in [None] + list(WEIGHTS):
         pred = []
         for sig in m.signals:
@@ -160,9 +191,13 @@ def evaluate(with_judge: bool = True, labels_path=LABELS, name: str = "results",
     preds = {n: run_system(s, gold, draft_reply=with_drafts) for n, s in systems.items()}
     merged = {n: gold.merge(df, on="item_id", suffixes=("_gold", "")) for n, df in preds.items()}
 
-    results: dict = {"name": name, "n_gold": int(len(gold)), "params": params, "system_version": agent.version, "systems": {}}
+    results: dict = {"name": name, "n_gold": int(len(gold)), "params": params, "system_version": agent.version, "label_provenance": label_provenance(gold), "systems": {}}
     for n, m in merged.items():
         entry = {"intent": intent_metrics(m.intent_gold, m.intent), "escalation": escalation_metrics(m.escalate_gold, m.escalate), "by_sample_strategy": {}}
+        if with_drafts and "reply" in m:
+            m["ref_sim"] = reference_similarity(m.reply, m.historical_reply)
+            has = m.reply.notna() & (m.reply.astype(str).str.strip() != "")
+            entry["reference_similarity"] = {"n": int(has.sum()), "mean": round(float(m.ref_sim[has].mean()), 3) if has.any() else None, "mean_incl_missing_as_0": round(float(m.ref_sim.mean()), 3)}
         for strat, grp in m.groupby("sample_strategy"):
             entry["by_sample_strategy"][strat] = {"intent": intent_metrics(grp.intent_gold, grp.intent), "escalation": escalation_metrics(grp.escalate_gold, grp.escalate)}
         if n == "system":
@@ -196,6 +231,8 @@ def evaluate(with_judge: bool = True, labels_path=LABELS, name: str = "results",
     # Paired bootstrap on every system-vs-simple gap, same item resample for both.
     a, b = merged["system"], merged["simple"]
     gaps = {"intent_accuracy": paired_bootstrap(a, b, _acc), "escalation_f1": paired_bootstrap(a, b, _f1)}
+    if with_drafts and "ref_sim" in a and "ref_sim" in b:
+        gaps["reference_similarity"] = paired_bootstrap(a, b, lambda d: float(d.ref_sim.mean()))
     if with_judge and with_drafts:
         for ax in AXES:
             ja, jb = a[["item_id", ax]].fillna(1), b[["item_id", ax]].fillna(1)  # a missing draft scores 1
@@ -224,6 +261,14 @@ def evaluate(with_judge: bool = True, labels_path=LABELS, name: str = "results",
 # ---------------------------------------------------------------- rendering
 def render_md(res: dict) -> str:
     L = [f"# {res['name']}: golden set n={res['n_gold']}, system version {res.get('system_version')}", ""]
+    prov = res.get("label_provenance")
+    if prov:
+        L.append("Label provenance: " + ", ".join(f"{k}: {v}" for k, v in prov["labeler"].items())
+                 + ("" if prov.get("human_labelled") else "  **(model-drafted labels; every number below is agreement with a model's reading of the guide)**"))
+        if "overturned_vs_model_draft" in prov:
+            o = prov["overturned_vs_model_draft"]
+            L.append(f"Rows changed from the model draft: {o['n']} of {res['n_gold']} ({o['rate']}); intent {o['intent']}, escalate {o['escalate']}")
+        L.append("")
     has_judge = any("judge" in e for e in res["systems"].values())
     L.append("| system | intent acc (95% CI) | macro-F1 | esc. precision | esc. recall | esc. F1 | esc. rate | " + (" | ".join(f"judge {a}" for a in AXES) + " |" if has_judge else ""))
     L.append("|" + "---|" * (7 + (len(AXES) if has_judge else 0)))
@@ -233,6 +278,12 @@ def render_md(res: dict) -> str:
         if has_judge:
             row += " " + " | ".join(str(j.get(a, "–")) for a in AXES) + " |"
         L.append(row)
+    if any("reference_similarity" in e for e in res["systems"].values()):
+        L += ["", "Reference similarity (MiniLM cosine between the reply and the reply the brand actually sent; judge-free):", "", "| system | n with reply | mean | mean, missing reply = 0 |", "|---|---|---|---|"]
+        for n, e in res["systems"].items():
+            r = e.get("reference_similarity")
+            if r:
+                L.append(f"| {n} | {r['n']} | {r['mean']} | {r['mean_incl_missing_as_0']} |")
     g = res["system_vs_simple_paired_bootstrap"]
     L += ["", "System minus simple baseline, paired bootstrap (2000 resamples):", "", "| metric | diff | 95% CI | P(diff ≤ 0) |", "|---|---|---|---|"]
     for k, v in g.items():
@@ -244,7 +295,7 @@ def render_md(res: dict) -> str:
     L += ["", "Escalation recall by gold intent (system):", "", "| gold intent | n | recall |", "|---|---|---|"]
     for k, v in sysr["escalation"]["per_intent_recall"].items():
         L.append(f"| {k} | {v['n']} | {v['recall']} |")
-    L += ["", "Signal ablation (system, drop one signal):", "", "| config | precision | recall | F1 | rate |", "|---|---|---|---|---|"]
+    L += ["", "Signal ablation (system, drop one signal; `sensitive_intent_only` is the one-rule baseline):", "", "| config | precision | recall | F1 | rate |", "|---|---|---|---|---|"]
     for k, v in sysr["signal_ablation"].items():
         L.append(f"| {k} | {v['precision']} | {v['recall']} | {v['f1']} | {v['escalation_rate']} |")
     cm = sysr["intent"]["confusion"]
@@ -252,7 +303,7 @@ def render_md(res: dict) -> str:
     for lab, row in zip(cm["labels"], cm["rows_gold_cols_pred"], strict=True):
         L.append(f"| {lab} | " + " | ".join(str(x) for x in row) + " |")
     ud = sysr["intent"]["unhandleable_detection"]
-    L += ["", f"Unhandleable detection: gold n={ud['gold_n']}, recall={ud['recall']}, false positives={ud['false_positives']}"]
+    L += ["", f"Unhandleable detection by the classifier rule: gold n={ud['gold_n']}, recall={ud['recall']}, false positives={ud['false_positives']} (escalation recall on those rows is in the per-intent table above; other signals can still escalate them)"]
     L += ["", "By sample strategy (intent accuracy / escalation F1):", ""]
     for n, e in res["systems"].items():
         L.append(f"- {n}: " + "; ".join(f"{k}: {v['intent']['accuracy']} / {v['escalation']['f1']}" for k, v in e["by_sample_strategy"].items()))

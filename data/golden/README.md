@@ -22,6 +22,18 @@ Rules fixed before labelling:
 - A known self-serve fix exists in Spotify's history (reinstall, log out/in, downloads article, licensing FAQ) → `escalate=n`.
 - The keyword pre-label is deliberately not shown; do not look at `historical_reply` before choosing the intent.
 
+**Current state and the human pass.** Every row of `golden_labels.csv` and `golden2_labels.csv` was
+drafted by a model and carries `labeler=claude-draft (review each row)`. The draft is preserved in
+`draft_intent` / `draft_escalate`. To do the human pass:
+
+1. Read `message` (not `customer_raw`, not `historical_reply`), then correct `intent` and `escalate`
+   in place. Leave the `draft_*` columns alone.
+2. Set `labeler` to your name on every row you reviewed, including the ones you agreed with.
+3. `make label-status` prints the labeler counts and how many rows you overturned; `make eval`
+   prints the same provenance line at the top of `reports/results.md`.
+
+Until step 2 is done, `make eval` marks the results as model-labelled.
+
 **Second annotator.** `annotator2_candidates.csv` has 50 of the 200. A second person labels it
 blind into `annotator2_labels.csv`; `make agreement` reports Cohen's kappa overall, excluding
 `other`, and per class.

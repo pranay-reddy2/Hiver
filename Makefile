@@ -1,13 +1,16 @@
 PY := .venv/bin/python
 RUN := PYTHONPATH=src $(PY) -m hiver_agent.cli
 
-.PHONY: eval-v2 eval-fresh judge-cross golden-sample2 lint models setup data prep split labels train index baselines tune build golden-sample agreement filter-check filter-precision eval eval-live judge-sheet judge-agreement demo test
+.PHONY: label-status eval-v2 eval-fresh judge-cross golden-sample2 lint models setup data prep split labels train index baselines tune build golden-sample agreement filter-check filter-precision eval eval-live judge-sheet judge-agreement demo test
 
 setup:            ## create venv and install pinned deps
 	uv sync --frozen --extra dev
 
 data:             ## download + unzip the Kaggle dataset (~177 MB)
-	mkdir -p data/raw && cd data/raw && curl -sSL -o twcs.zip "https://www.kaggle.com/api/v1/datasets/download/thoughtvector/customer-support-on-twitter" && unzip -o -q twcs.zip
+	mkdir -p data/raw && cd data/raw && \
+	  { curl -fsSL -o twcs.zip "https://www.kaggle.com/api/v1/datasets/download/thoughtvector/customer-support-on-twitter" \
+	    || { echo "unauthenticated download failed; trying the kaggle CLI (needs ~/.kaggle/kaggle.json)"; kaggle datasets download -d thoughtvector/customer-support-on-twitter -f twcs.zip -p . || kaggle datasets download -d thoughtvector/customer-support-on-twitter -p . && ls; }; } \
+	  && unzip -o -q *.zip
 
 prep:      ; $(RUN) prep
 split:     ; $(RUN) split
@@ -19,6 +22,7 @@ tune:      ; $(RUN) tune
 build: prep split labels train index baselines tune   ## rebuild every artefact from raw data
 
 golden-sample:    ; $(RUN) golden-sample
+label-status:     ; $(RUN) label-status   ## who wrote the labels, overturn rate vs the model draft, what is still unrated
 agreement:        ; $(RUN) agreement
 filter-check:     ; $(RUN) filter-check
 filter-precision: ; $(RUN) filter-precision
