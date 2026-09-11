@@ -12,7 +12,7 @@ dataset. For each incoming customer tweet it:
 | deliverable | where |
 |---|---|
 | Runnable pipeline, headline numbers in under 15 minutes | this README, next section |
-| Golden evaluation set + how it was sampled and labelled | [`data/golden/README.md`](data/golden/README.md), `golden_labels.csv` (200), `golden2_labels.csv` (fresh 100 for post-hoc fixes). **Labels are currently a model draft; `make label-status` says so** |
+| Golden evaluation set + how it was sampled and labelled | [`data/golden/README.md`](data/golden/README.md), `golden_labels.csv` (200), `golden2_labels.csv` (fresh 100 for post-hoc fixes). The 200 are hand-labelled, with a blind second annotator on 50 (`make agreement`); the fresh 100 are still a model draft, and `make label-status` says which is which |
 | Evaluation harness: automated metrics | [`src/hiver_agent/evaluate.py`](src/hiver_agent/evaluate.py), output `reports/results.md` |
 | LLM-as-judge rubric and judge-vs-human agreement | [`configs/rubric.md`](configs/rubric.md), [`src/hiver_agent/judge.py`](src/hiver_agent/judge.py), `make judge-agreement` on `data/golden/human_reply_ratings.csv` |
 | Report: framing, results vs two baselines, top-5 failures, misleading headline, next week | [`reports/report.md`](reports/report.md) |
@@ -58,10 +58,18 @@ make demo MSG="my downloaded songs keep disappearing from my phone"   # runs liv
 
 ## Label provenance (read before trusting any number)
 
-Every golden label was drafted by a model and is marked as such; the human review, second-annotator
-sheet, 60 reply ratings and 100 filter checks are the open items. `make label-status` prints exactly
-what has and has not been done, and the top line of `reports/results.md` repeats it. The model draft
-is kept in `draft_intent` / `draft_escalate` so the review's overturn rate is reported automatically.
+Labels were drafted by a model, then reviewed by hand. The `labeler` column on every row says who
+signed off, the model draft is kept in `draft_intent` / `draft_escalate`, and `make label-status`
+prints the overturn rate and what is still model-only. State at submission:
+
+| artefact | who | check |
+|---|---|---|
+| 200 golden labels | human review of the model draft, 3 of 200 overturned | `make eval` (provenance line at the top of `results.md`) |
+| 50-item blind second annotation | second human | `make agreement`: intent kappa 0.83, escalation kappa 0.73 |
+| 60 reply ratings on the rubric | human | `make judge-agreement`: fit kappa 0.56 vs the LLM judge |
+| 100 resolution-filter checks | human | `make filter-precision`: 0.82 |
+| 100 fresh-sample labels (`golden2_labels.csv`) | **model draft, not reviewed** | used only for the v1-vs-v2 comparison |
+
 The procedure is in [`data/golden/README.md`](data/golden/README.md).
 
 ## Other targets
