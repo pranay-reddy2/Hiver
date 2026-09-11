@@ -93,6 +93,11 @@ Escalation threshold sweep (system, re-scored from stored signals):
   are abstains: the drafter returned no reply because neither the evidence nor the question bank fit
   the issue (a €99 offer, a support-delay complaint, a Mac start-on-login setting); all twelve were
   escalated, seven of them correctly.
+- **Second judge.** Re-judging the 188 scored drafts with Gemini 3.5 Flash gives quadratic-weighted
+  kappa 0.68 (Spearman 0.59) with the 2.5 Flash judge on resolution fit, the one axis that carries the
+  result. Groundedness, voice and safety are saturated near 5 for both judges, so agreement there is
+  90 to 100% exact but kappa is undefined or zero; those axes do not discriminate on this data.
+  Per-item scores in `reports/judge_gemini-3.5-flash.csv`.
 - **Deterministic checks.** 99.5% of drafts cite only links present in their evidence, 99.5% are under
   280 characters, none use more than one emoji, none ask for device details the customer already gave.
 - **Cost and latency.** Mean draft: 774 input tokens, 108 output, 1,074 thinking; 6.5 s mean, 11.3 s p90.
@@ -180,8 +185,10 @@ see stance. This is also why the embedding classifier does not beat TF-IDF.
   did about ten thousand times in the corpus. Fit is not: a reply that addresses no customer's issue
   should not average 4. It scores that high because fit is defined relative to the evidence and, under
   own-evidence judging, the template's evidence is the template. Whether that is a judge failure or a
-  rubric failure only the 60 human ratings can say, and until they exist the judge columns are
-  unvalidated on exactly the axis where the system claims its win.
+  rubric failure only the 60 human ratings can say. A second Gemini judge agrees with the first on fit
+  (kappa 0.68), which rules out one model's quirk but not a shared reading of the rubric; until the
+  human ratings exist the judge columns are unvalidated on exactly the axis where the system claims
+  its win.
 - **Two escalation signals are dead weight at this threshold.** The ablation shows dropping
   `money_or_security_incident` or `repeat_contact` changes nothing; `sensitive_intent` carries the
   result (F1 0.73 to 0.61 without it). The six-signal design is mostly a one-signal rule plus noise.
