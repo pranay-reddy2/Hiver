@@ -44,40 +44,59 @@ integration, and a fine-tuned classifier.
 
 ## 3. Results vs. baselines
 
-Golden set: 200 items, 15 of them `unhandleable` (excluded from intent accuracy, included in escalation).
-Gold escalation rate 0.38. Full table with CIs in `reports/results.md`.
+Golden set: 200 items, 7 of them `unhandleable` (excluded from intent accuracy, included in escalation).
+Gold escalation rate 0.355. Generator Gemini 3.8 Flash, judge Gemini 2.5 Flash, each system judged
+against its own evidence. Full tables (confusion matrix, per-intent recall, signal ablation) in
+`reports/results.md`; the fresh-sample and v2 runs in `fresh_v1.md`, `fresh_v2.md`, `results_v2.md`.
 
 | system | intent acc (95% CI) | macro-F1 | esc. precision | esc. recall | esc. F1 | esc. rate | judge groundedness | judge resolution_fit | judge brand_voice | judge safety_scope |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| trivial | 0.227 (0.168–0.292) | 0.046 | 0.0 | 0.0 | 0.0 | 0.0 | 2.55 | 2.11 | 3.88 | 2.73 |
-| simple | 0.741 (0.676–0.805) | 0.742 | 0.92 | 0.303 | 0.455 | 0.125 | 2.77 | 2.67 | 3.96 | 4.35 |
-| system | 0.73 (0.665–0.789) | 0.744 | 0.818 | 0.474 | 0.6 | 0.22 | 4.62 | 4.28 | 4.94 | 5.0 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| trivial | 0.233 (0.176–0.295) | 0.047 | 0.0 | 0.0 | 0.0 | 0.0 | 4.96 | 4.04 | 4.99 | 4.86 |
+| simple | 0.731 (0.668–0.788) | 0.724 | 0.885 | 0.324 | 0.474 | 0.13 | 4.8 | 4.03 | 4.88 | 4.96 |
+| system | 0.751 (0.689–0.813) | 0.758 | 0.683 | 0.789 | 0.732 | 0.41 | 4.78 | 4.64 | 4.99 | 5.0 |
 
-Escalation threshold sweep (system):
+System minus simple baseline, paired bootstrap (2000 resamples):
+
+| metric | diff | 95% CI | P(diff ≤ 0) |
+|---|---|---|---|
+| intent_accuracy | +0.021 | [-0.032, +0.078] | 0.261 |
+| escalation_f1 | +0.258 | [+0.130, +0.395] | 0.0 |
+| judge_groundedness | -0.250 | [-0.480, -0.030] | 0.993 |
+| judge_resolution_fit | +0.390 | [+0.100, +0.680] | 0.003 |
+| judge_brand_voice | -0.130 | [-0.290, +0.020] | 0.96 |
+| judge_safety_scope | -0.200 | [-0.341, -0.060] | 0.998 |
+
+Escalation threshold sweep (system, re-scored from stored signals):
 
 | threshold | precision | recall | rate |
 |---|---|---|---|
-| 0.35 | 0.73 | 0.711 | 0.37 |
-| 0.45 | 0.818 | 0.474 | 0.22 |
-| 0.55 | 0.829 | 0.447 | 0.205 |
+| 0.2 | 0.536 | 0.845 | 0.56 |
+| 0.3 | 0.683 | 0.789 | 0.41 |
+| 0.4 | 0.704 | 0.704 | 0.355 |
 
-- **Intent: the system does not beat the simple baseline.** MiniLM + LR (0.73) and TF-IDF + LR (0.74)
-  are trained on the same LLM weak labels and land inside each other's 95% CI. The embedding model buys
-  nothing on 100-character tweets with distinctive vocabulary.
-- **Escalation: the system wins on F1 (0.60 vs 0.46), mostly on recall (0.47 vs 0.30).** Both are far
-  from the 0.38 gold rate; the dev-tuned threshold of 0.45 escalates 22% of traffic. At 0.35 the system
-  reaches recall 0.71 at precision 0.73 (see sweep). That better point was found on golden, so it is
-  reported, not adopted.
-- **Reply quality is where the system separates.** Judge means of 4.6 / 4.3 / 4.9 / 5.0 on
-  groundedness / fit / voice / safety, against 2.8 / 2.7 / 4.0 / 4.4 for the nearest-neighbour baseline
-  and 2.6 / 2.1 / 3.9 / 2.7 for the template. Every one of the 199 drafts passed the automatic link check.
-- **Stratified vs random halves agree** within three points on intent and escalation, so the stratified
-  half is not painting a rosier picture than the traffic mix.
-- **Which gaps clear noise.** The paired bootstrap table in `results.md` gives a CI on the
-  system-minus-simple difference for every metric with the same item resample on both sides.
-  SEE_PAIRED
-- **Reply modes:** policy 78, diagnostic 72, fix 46, none 4. Fix and policy drafts score 4.6+ on fit;
-  diagnostic drafts score 3.6 and are the weak third (see failure mode 4).
+**What clears noise and what does not.**
+
+- **Intent: no.** System 0.75 vs TF-IDF 0.73, paired difference +0.02 with a CI spanning zero, and the
+  same on the fresh 100 (+0.07, CI [-0.01, +0.16]). The embedding classifier is not better than TF-IDF
+  on 100-character tweets; `feature_request_feedback` is the leak (25 of 45 correct; see failure mode 5).
+- **Escalation: yes.** F1 0.73 vs 0.47, paired difference +0.26 with CI [+0.13, +0.40] on golden and
+  +0.24 with CI [+0.07, +0.41] on the fresh sample. The win is recall (0.79 vs 0.32) bought with
+  precision (0.68 vs 0.89) at a 41% escalation rate against a 36% gold rate. The ablation shows
+  `sensitive_intent` carries it (F1 drops to 0.61 without it); `money_or_security_incident` and
+  `repeat_contact` change nothing at this threshold and `unhandleable` detection is 0 of 7 in v1.
+- **Reply quality: only on resolution fit.** Judging each system against its own evidence makes the
+  nearest-neighbour baseline grounded and on-voice by construction: it copies a real reply. So the
+  system loses on groundedness (-0.25) and safety (-0.20), ties on voice, and wins on resolution fit
+  (+0.39, CI [+0.10, +0.68]). That is the honest value of drafting: the baseline's reply is a perfect
+  Spotify reply to a *different* customer.
+- **By mode.** Fix drafts (45) score 4.9 on fit, policy (75) 4.95, diagnostic (65) 4.1. Twelve drafts
+  are abstains: the drafter returned no reply because neither the evidence nor the question bank fit
+  the issue (a €99 offer, a support-delay complaint, a Mac start-on-login setting); all twelve were
+  escalated, seven of them correctly.
+- **Deterministic checks.** 99.5% of drafts cite only links present in their evidence, 99.5% are under
+  280 characters, none use more than one emoji, none ask for device details the customer already gave.
+- **Cost and latency.** Mean draft: 774 input tokens, 108 output, 1,074 thinking; 6.5 s mean, 11.3 s p90.
+- **Stratified vs uniform halves** agree within three points on intent and escalation.
 
 ## 4. Failure analysis: top 5 failure modes
 
@@ -99,7 +118,8 @@ test now builds pairs from a synthetic thread with a promo root. After the fix t
 non-actionable set is smaller (non-English, image-only, under three words) and the language detector
 (lingua, v2) catches Dutch and Tagalog but not romanised Indonesian chat-speak ("udh 3 hari ga bs login").
 
-**2. Family-plan problems never escalate.** Recall on `family_plan` gold escalations is 0 of 8.
+**2. Family-plan problems under-escalate.** Recall on `family_plan` gold escalations is 4 of 8 on golden
+and 0 of 6 on the fresh sample.
 "I got charged for our family plan, I expect my family to be able to listen" scored 0.30: family_plan is
 not a sensitive intent, so neither the money signal nor the incident signal can fire. Hypothesis: the
 taxonomy split family_plan out of billing for retrieval reasons, and the escalation weights were written
@@ -117,12 +137,13 @@ rule, not an embedding.
 is per intent, and the top-3 questions for most intents collapse to "What device, operating system and
 Spotify version are you using?". A customer receiving unrequested password-reset emails was asked for
 their device and OS; a student charged $10.95 was asked whether they attend an accredited institution.
-Judge fit for diagnostic drafts is 3.6, against 4.6+ for fix and policy drafts. Hypothesis: the bank
+Judge fit for diagnostic drafts is 4.1, against 4.9+ for fix and policy drafts. Hypothesis: the bank
 should be keyed on the retrieved neighbours' questions, not the intent; and when the top neighbour is a
 DM redirect, the honest draft is the DM redirect.
 
-**5. `feature_request_feedback` leaks into everything.** 23 of 44 gold feedback tweets were classified
-correctly; the rest went to playback_app_bug (6), content_availability (4), other (4), billing (3).
+**5. `feature_request_feedback` leaks into everything.** 25 of 45 gold feedback tweets were classified
+correctly; the rest went to playback_app_bug (6), content_availability (6), billing (3), other (3),
+account_access (2).
 "Still waiting for the lyrics tab to make a comeback" became content_availability and was escalated for
 "no historical resolution matches + customer is angry" because of the exclamation marks. Hypothesis:
 feedback is defined by *stance* (a wish, an opinion) rather than *topic*, and a topic classifier cannot
@@ -142,16 +163,24 @@ see stance. This is also why the embedding classifier does not beat TF-IDF.
 - **The "random" half is a uniform draw from a nine-week pool.** It was first called "random by
   time", which overstated it; it is the traffic mix, not a time series.
 - **The escalation threshold was tuned on a proxy** (historical reply was a DM redirect), not on
-  hand escalation labels. The proxy chose 0.45; on golden, 0.35 is clearly better (recall 0.71 vs 0.47).
-  The headline uses 0.45 because switching would be tuning on the test set.
+  hand escalation labels. The proxy chose 0.30, which escalates 41% of traffic; 0.40 trades recall 0.79
+  for 0.70 at 36%. The headline uses the proxy's choice because picking from the sweep would be tuning
+  on the test set.
 - **Weak labels are LLM labels.** The classifier learns the LLM's reading of my intent definitions;
   the human golden set is the only check on that.
 - **The judge (Gemini 2.5 Flash) is a smaller model from the same family as the generator (Gemini 3.8 Flash).** Absolute anchored scoring
   and the human-agreement numbers limit, but do not remove, self-preference.
-- **Groundedness is easy when the evidence is thin.** A reply that only asks diagnostic questions
-  scores well on groundedness while resolving nothing; read it alongside resolution fit and mode share.
-- **The resolution filter is regex.** Its hand-checked precision on 100 admitted replies is reported;
+- **Groundedness and voice are not where the system wins, and they cannot be.** A copied historical
+  reply is perfectly grounded and perfectly on-voice by definition; own-evidence judging makes that
+  visible. The only judge axis the system wins is resolution fit. The earlier draft of this report had
+  the system ahead on every axis because the baseline was judged against evidence it never saw.
+- **12 abstains are unscored.** The judge means are over 188 drafts; the 12 items where the drafter
+  declined would likely score low on fit had it been forced to answer.
+- **The resolution filter is regex.** Its hand-checked precision on 100 admitted replies is pending;
   whatever it is, the retrieval corpus contains that much noise.
+- **The v2 fixes did not transfer.** On the fresh 100, v2 moves escalation F1 from 0.700 to 0.707 and
+  intent accuracy from 0.84 to 0.83; on golden, where they were designed, 0.73 to 0.76. Both inside
+  noise. The language detector catches Dutch and Tagalog and misses romanised Indonesian chat-speak.
 
 ## 6. Next week
 
