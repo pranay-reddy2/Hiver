@@ -7,7 +7,16 @@ dataset. For each incoming customer tweet it:
 2. **Drafts** a public reply grounded only in how @SpotifyCares historically resolved similar tweets.
 3. **Decides** auto-handle vs. escalate, with a stated reason.
 
-The report, results, failure analysis and decision log are in [`reports/`](reports/).
+## Deliverables map
+
+| deliverable | where |
+|---|---|
+| Runnable pipeline, headline numbers in under 15 minutes | this README, next section |
+| Golden evaluation set + how it was sampled and labelled | [`data/golden/README.md`](data/golden/README.md), `golden_labels.csv` (200), `golden2_labels.csv` (fresh 100 for post-hoc fixes) |
+| Evaluation harness: automated metrics | [`src/hiver_agent/evaluate.py`](src/hiver_agent/evaluate.py), output `reports/results.md` |
+| LLM-as-judge rubric and judge-vs-human agreement | [`configs/rubric.md`](configs/rubric.md), [`src/hiver_agent/judge.py`](src/hiver_agent/judge.py), `make judge-agreement` on `data/golden/human_reply_ratings.csv` |
+| Report: framing, results vs two baselines, top-5 failures, misleading headline, next week | [`reports/report.md`](reports/report.md) |
+| Decision log | [`reports/decision_log.md`](reports/decision_log.md) |
 
 ## Reproduce the headline numbers (offline, ~1 minute)
 
