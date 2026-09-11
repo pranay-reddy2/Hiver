@@ -17,3 +17,15 @@ The fifteen decisions a reader could not infer from the code. Smaller ones are i
 13. **Draft golden labels by model, flagged as such, rather than ship an unlabelled set.** Labelled with `labeler=claude-draft`; the draft is kept in `draft_intent`/`draft_escalate` so the human review's overturn rate is measured, `make label-status` prints what a human has and has not done, and `make eval` prints the provenance at the top of the results. A human review is the first item on the next-week list.
 14. **Post-hoc fixes live behind `SYSTEM_VERSION=v2` and are graded on a fresh 100-item sample.** The headline stays v1. v2 makes the incident regex intent-independent and swaps the word-list language check for lingua plus promo-copy and brand-signature rules; both were motivated by golden failures, so their effect on the original 200 is reported as post-hoc and their effect on the fresh 100 as the real test.
 15. **Generator switched from Gemini 3.1 Pro to Gemini 3.8 Flash.** Pro produced the first draft set, then its 250-request daily quota blocked every rerun after the cache key and prompts changed. A reproducible pipeline with a smaller model beats an unreproducible one with a larger model; the judge stays on 2.5 Flash so the two remain different models.
+
+## Smaller implementation decisions
+
+16. **The harness once graded labels written on the wrong text.** Customers often reply to someone else's tweet (a promo, another customer); prep used the thread root as the customer message while the agent was fed the customer's own tweet. Nine "promo tweets" in the golden set were promos the customer had replied to. The fix carries the exact agent input (`message`) through pairs, retrieval keys, weak labels and both golden files; 22 rows were relabelled; a test builds pairs from a synthetic thread with a promo root.
+17. **Join numbered multi-tweet replies only when the number is N+1.** A child reply starting with "1:" is a new reply, not a continuation.
+18. **Precedence: fix > policy > diagnostic > DM > ack** when a reply does more than one thing.
+19. **Classifier trained on weak labels, never on golden.**
+20. **`unhandleable` is a rule, applied before the classifier, always escalated, excluded from accuracy.**
+21. **Judge evidence includes the diagnostic question bank**, otherwise diagnostic drafts scored 2.3 on groundedness for quoting questions the judge had not seen.
+22. **Cache key includes effort and max_tokens**; changing effort used to serve stale output.
+23. **Retrieval dedupes near-identical replies and uses a soft intent bonus instead of a hard mask.**
+24. **The thread sample is pinned to its original population**; a turn-ordering rewrite once silently dropped 121 golden threads, so eligibility is now explicit and the golden files assert membership.
