@@ -1,9 +1,12 @@
-# environment and secrets
+# environment and secrets (.env.example stays tracked)
 .venv/
 .env
+.env.*
+!.env.example
 
 # raw dataset (~180 MB zip + csv; `make data` fetches it)
 data/raw/
+*.zip
 
 # derived artefacts rebuilt by `make build` (pairs/splits/weak_labels parquet stay committed)
 data/processed/*.npy
@@ -25,8 +28,18 @@ dist/
 .mypy_cache/
 .ipynb_checkpoints/
 
-# editors / os
+# editors / os / assistants
 .idea/
 .vscode/
+.claude/
 .DS_Store
 *.log
+
+# model download caches, if a tool drops them in the repo
+.cache/
+huggingface/
+
+# per-item prediction CSVs of the secondary runs (regenerated offline by `make eval-v2` / `make eval-fresh`;
+# the headline preds_{system,simple,trivial}.csv stay committed)
+reports/preds_*_fresh_v*.csv
+reports/preds_*_results_v2.csv
