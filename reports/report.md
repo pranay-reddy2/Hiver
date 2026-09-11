@@ -174,6 +174,17 @@ see stance. This is also why the embedding classifier does not beat TF-IDF.
   reply is perfectly grounded and perfectly on-voice by definition; own-evidence judging makes that
   visible. The only judge axis the system wins is resolution fit. The earlier draft of this report had
   the system ahead on every axis because the baseline was judged against evidence it never saw.
+- **The judge over-credits a constant reply, and the rubric lets it.** The template baseline, one
+  fixed "DM us your email or username" sent to every customer, scores 4.0 on resolution fit and 4.9 on
+  safety. Safety is defensible: the template asks for the email *by DM*, which is what Spotify's agents
+  did about ten thousand times in the corpus. Fit is not: a reply that addresses no customer's issue
+  should not average 4. It scores that high because fit is defined relative to the evidence and, under
+  own-evidence judging, the template's evidence is the template. Whether that is a judge failure or a
+  rubric failure only the 60 human ratings can say, and until they exist the judge columns are
+  unvalidated on exactly the axis where the system claims its win.
+- **Two escalation signals are dead weight at this threshold.** The ablation shows dropping
+  `money_or_security_incident` or `repeat_contact` changes nothing; `sensitive_intent` carries the
+  result (F1 0.73 to 0.61 without it). The six-signal design is mostly a one-signal rule plus noise.
 - **12 abstains are unscored.** The judge means are over 188 drafts; the 12 items where the drafter
   declined would likely score low on fit had it been forced to answer.
 - **The resolution filter is regex.** Its hand-checked precision on 100 admitted replies is pending;
