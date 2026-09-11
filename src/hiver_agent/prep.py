@@ -124,23 +124,26 @@ def build_pairs(full: pd.DataFrame, brand: str = C.BRAND) -> pd.DataFrame:
     pairs["customer_text"] = pairs.customer_raw.map(clean_customer)
     pairs["root_text"] = pairs.root_raw.map(clean_customer)
     pairs["brand_text"] = pairs.brand_raw  # already cleaned per part in _join_continuations
-    # turn_index: 0 when this is the first brand-answered tweet in the customer's thread.
-    brand_answered = pairs.groupby("thread_id").customer_tweet_id.rank(method="first").astype(int) - 1
-    pairs["turn_index"] = brand_answered
-    # message_text is exactly what the agent sees: the customer's tweet, prefixed by their own
-    # earlier root tweet when they are continuing a thread the brand has not answered yet.
+    # message_text (set after dedupe) is exactly what the agent sees: the customer's tweet, prefixed
+    # by their own earlier root tweet when they are continuing a thread the brand has not answered yet.
+    pairs["customer_hash"] = pairs.customer_text.map(text_hash)  # dedupe key is the tweet itself, so the thread sample is stable
+    # Dedupe exact-duplicate customer texts (retweets, spam) keeping the earliest.
+    pairs = pairs.sort_values("created_at").drop_duplicates("customer_hash", keep="first").reset_index(drop=True)
+    # turn_index: 0 for the first brand-answered tweet in the thread, ordered by depth then time.
+    # (tweet ids in this dataset are renumbered, not chronological, so never rank by id.)
+    order = pairs.sort_values(["thread_id", "depth", "created_at"]).groupby("thread_id").cumcount()
+    pairs["turn_index"] = order.reindex(pairs.index)
     continuation = (pairs.turn_index == 0) & pairs.same_author_root & (pairs.root_text != pairs.customer_text)
     pairs["message_text"] = np.where(continuation, pairs.root_text + " || " + pairs.customer_text, pairs.customer_text)
     pairs["query_text"] = np.where(pairs.turn_index == 0, pairs.message_text, pairs.root_text + " || " + pairs.customer_text)
     pairs["unhandleable"] = pairs.message_text.map(is_unhandleable)
-    pairs["customer_hash"] = pairs.message_text.map(text_hash)
-    # Dedupe exact-duplicate customer texts (retweets, spam) keeping the earliest.
-    pairs = pairs.sort_values("created_at").drop_duplicates("customer_hash", keep="first")
-    return pairs.reset_index(drop=True)
+    return pairs
 
 
 def subsample_threads(pairs: pd.DataFrame, max_threads: int, seed: int = C.SEED) -> pd.DataFrame:
-    roots = pairs[pairs.turn_index == 0].thread_id.unique()
+    # Eligible threads: the brand answered the root tweet or a customer tweet one hop from it.
+    # This is the population the golden sets were drawn from; keep it fixed so the seeded draw is stable.
+    roots = pairs[pairs.depth <= 1].thread_id.unique()
     rng = np.random.default_rng(seed)
     if len(roots) > max_threads:
         roots = rng.choice(roots, size=max_threads, replace=False)
