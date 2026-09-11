@@ -4,7 +4,7 @@ RUN := PYTHONPATH=src $(PY) -m hiver_agent.cli
 .PHONY: eval-v2 eval-fresh judge-cross golden-sample2 lint models setup data prep split labels train index baselines tune build golden-sample agreement filter-check filter-precision eval eval-live judge-sheet judge-agreement demo test
 
 setup:            ## create venv and install pinned deps
-	uv venv .venv && uv sync --frozen --extra dev
+	uv sync --frozen --extra dev
 
 data:             ## download + unzip the Kaggle dataset (~177 MB)
 	mkdir -p data/raw && cd data/raw && curl -sSL -o twcs.zip "https://www.kaggle.com/api/v1/datasets/download/thoughtvector/customer-support-on-twitter" && unzip -o -q twcs.zip
