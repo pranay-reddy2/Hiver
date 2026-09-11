@@ -1,8 +1,7 @@
 """Single LLM entry point with a content-addressed JSONL cache.
 
-Backends are selected by a model-string prefix: "gemini:gemini-3.1-pro-preview" or
-"anthropic:claude-haiku-4-5". Every call is keyed by sha256(model, system, user, schema, effort,
-max_tokens). Records also carry usage (tokens) and wall seconds so cost and latency can be reported.
+Model strings carry a provider prefix ("gemini:gemini-3.8-flash"); only the Gemini backend is
+implemented. Every call is keyed by sha256(model, system, user, schema, effort, max_tokens). Records also carry usage (tokens) and wall seconds so cost and latency can be reported.
 `make eval` runs with HIVER_LIVE unset: cache hits are served, misses are counted and raised at the
 end so a reviewer never silently burns tokens. `make eval-live` sets HIVER_LIVE=1.
 """
@@ -30,7 +29,7 @@ def _split(model: str) -> tuple[str, str]:
     if ":" in model:
         provider, name = model.split(":", 1)
         return provider, name
-    return ("anthropic" if model.startswith("claude") else "gemini"), model
+    return "gemini", model
 
 
 class LLM:
@@ -72,16 +71,11 @@ class LLM:
     def _client(self, provider: str):
         with self._lock:
             if provider not in self._clients:
-                if provider == "gemini":
-                    from google import genai
+                if provider != "gemini":
+                    raise ValueError(f"unknown provider {provider}; only gemini is implemented")
+                from google import genai
 
-                    self._clients[provider] = genai.Client()  # reads GEMINI_API_KEY / GOOGLE_API_KEY
-                elif provider == "anthropic":
-                    import anthropic
-
-                    self._clients[provider] = anthropic.Anthropic()
-                else:
-                    raise ValueError(f"unknown provider {provider}")
+                self._clients[provider] = genai.Client()  # reads GEMINI_API_KEY / GOOGLE_API_KEY
             return self._clients[provider]
 
     # ---- backends --------------------------------------------------------------
@@ -126,18 +120,6 @@ class LLM:
                 raise RuntimeError(f"gemini returned non-JSON (finish={finish}): {text[:300]!r}") from None
         raise RuntimeError("unreachable")
 
-    def _anthropic(self, name: str, system: str, user: str, schema: dict, effort: str, max_tokens: int) -> tuple[dict, dict]:
-        client = self._client("anthropic")
-        kwargs = dict(model=name, max_tokens=max_tokens, system=system, messages=[{"role": "user", "content": user}])
-        # Haiku 4.5 does not take `effort`; the current Opus/Sonnet generation does.
-        kwargs["output_config"] = {"format": {"type": "json_schema", "schema": schema}} if "haiku" in name else {"effort": effort, "format": {"type": "json_schema", "schema": schema}}
-        response = client.messages.create(**kwargs)
-        usage = {"input": response.usage.input_tokens, "output": response.usage.output_tokens}
-        if response.stop_reason == "refusal":
-            return {"_refusal": True}, usage
-        text = next(b.text for b in response.content if b.type == "text")
-        return json.loads(text), usage
-
     # ---- public --------------------------------------------------------------
     def complete_json(self, *, system: str, user: str, schema: dict, model: str, tag: str, effort: str = "low", max_tokens: int = 2048) -> dict:
         key = self._key(model, system, user, schema, effort, max_tokens)
@@ -149,7 +131,9 @@ class LLM:
         self.calls += 1
         provider, name = _split(model)
         t0 = time.time()
-        out, usage = self._gemini(name, system, user, schema, effort, max_tokens) if provider == "gemini" else self._anthropic(name, system, user, schema, effort, max_tokens)
+        if provider != "gemini":
+            raise ValueError(f"unknown provider {provider}; only gemini is implemented")
+        out, usage = self._gemini(name, system, user, schema, effort, max_tokens)
         self._append(key, tag, model, out, usage, time.time() - t0)
         return out
 
@@ -182,7 +166,4 @@ def get_llm() -> LLM:
 
 
 def list_models(provider: str = "gemini") -> list[str]:
-    llm = get_llm()
-    if provider == "gemini":
-        return [m.name for m in llm._client("gemini").models.list()]
-    return [m.id for m in llm._client("anthropic").models.list()]
+    return [m.name for m in get_llm()._client(provider).models.list()]

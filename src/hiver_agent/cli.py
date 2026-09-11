@@ -118,7 +118,7 @@ def main(argv=None):
     e.add_argument("--version", default=None, choices=[None, "v1", "v2"])
     e.set_defaults(func=cmd_eval)
     jc = sub.add_parser("judge-cross")
-    jc.add_argument("--model", default="anthropic:claude-haiku-4-5")
+    jc.add_argument("--model", default="gemini:gemini-3.5-flash")
     jc.set_defaults(func=cmd_judge_cross)
     sub.add_parser("golden-sample2").set_defaults(func=lambda a: __import__("hiver_agent.golden", fromlist=["main"]).main("sample2"))
     d = sub.add_parser("demo")

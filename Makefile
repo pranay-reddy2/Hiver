@@ -40,7 +40,7 @@ eval-v2:          ## post-hoc fixes on the same golden set (reported, not the he
 eval-fresh:       ## v1 vs v2 on the fresh 100-item sample, decisions only (no drafts, no judge)
 	$(RUN) eval --labels golden2_labels.csv --version v1 --name fresh_v1 --no-drafts --no-judge
 	$(RUN) eval --labels golden2_labels.csv --version v2 --name fresh_v2 --no-drafts --no-judge
-judge-cross:      ## second judge from another model family; needs ANTHROPIC_API_KEY
+judge-cross:      ## re-judge with a second model (default gemini-3.5-flash); prints judge-judge agreement
 	HIVER_LIVE=1 $(RUN) judge-cross
 golden-sample2:   ; $(RUN) golden-sample2
 lint:             ; .venv/bin/ruff check src tests

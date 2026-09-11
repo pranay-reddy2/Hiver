@@ -48,7 +48,7 @@ make demo MSG="my downloaded songs keep disappearing from my phone"   # runs liv
 |---|---|
 | `make eval-v2` | the post-hoc escalation / unhandleable fixes on the same golden set (reported, never the headline) |
 | `make eval-fresh` | v1 vs v2 on a fresh 100-item sample (`golden2_labels.csv`), decisions only |
-| `make judge-cross` | second judge from another model family (needs `ANTHROPIC_API_KEY`); prints judge-judge agreement |
+| `make judge-cross` | re-judge the drafts with a second model (default `gemini-3.5-flash`); prints judge-judge agreement |
 | `make agreement` / `make judge-agreement` / `make filter-precision` | human-agreement numbers once the CSVs under `data/golden/` are filled |
 | `make test` / `make lint` | pytest (15 tests) and ruff |
 
@@ -79,8 +79,7 @@ make demo MSG="my downloaded songs keep disappearing from my phone"   # runs liv
 Generator: `gemini-3.8-flash` (Gemini 3.1 Pro produced the first run but its 250-request daily quota
 made the pipeline unreproducible; see decision log). Weak labels and judge: `gemini-2.5-flash`, a
 different model so the judge is not grading its own writing. Embeddings: `all-MiniLM-L6-v2`, run locally.
-Model strings are `<provider>:<model>`; the Anthropic backend is also wired, so
-`JUDGE_MODEL=anthropic:claude-haiku-4-5 make eval-live` gives a judge from a different family.
+Model strings are `<provider>:<model>`; only the Gemini backend is implemented.
 `make models` lists what your key can reach. Gemini free-tier rate limits are handled with backoff,
 but the ~1.4k calls for a full run may exceed the free daily quota; the cache makes reruns free.
 
@@ -88,5 +87,5 @@ but the ~1.4k calls for a full run may exceed the free daily quota; the cache ma
 
 - Dataset: thoughtvector/customer-support-on-twitter (Kaggle).
 - `sentence-transformers/all-MiniLM-L6-v2` for embeddings; scikit-learn for LR and TF-IDF.
-- `google-genai` (and optionally the Anthropic SDK) for LLM calls. Everything else was written for this assignment with an AI
+- `google-genai` for LLM calls. Everything else was written for this assignment with an AI
   coding assistant (Claude Code); all code was reviewed and is explained in the report.
