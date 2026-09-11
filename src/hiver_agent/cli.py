@@ -45,9 +45,7 @@ def cmd_judge_sheet(args):
     """Write 60 system drafts (from preds_system.csv) for human rating on the four axes."""
     from .judge import AXES
 
-    preds = pd.read_csv(C.REPORTS / "preds_system.csv")
-    gold = pd.read_csv(C.GOLDEN / "golden_labels.csv", dtype=str)
-    m = gold.merge(preds, on="item_id", suffixes=("_gold", ""))
+    m = pd.read_csv(C.REPORTS / "preds_system.csv")  # already joined with the gold columns
     m = m[m.reply.notna()].sample(min(60, int(m.reply.notna().sum())), random_state=C.SEED)
     sheet = m[["item_id", "message", "intent", "reply", "evidence"]].copy()
     for a in AXES:

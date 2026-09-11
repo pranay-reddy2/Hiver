@@ -1,0 +1,1337 @@
+{
+  "name": "results_v2",
+  "n_gold": 200,
+  "params": {
+    "escalation_threshold": 0.3,
+    "sim_threshold": 0.533,
+    "k": 5,
+    "dev_sweep": {
+      "0.2": {
+        "precision": 0.478,
+        "recall": 0.797,
+        "f1": 0.598,
+        "rate": 0.575
+      },
+      "0.25": {
+        "precision": 0.63,
+        "recall": 0.754,
+        "f1": 0.686,
+        "rate": 0.412
+      },
+      "0.3": {
+        "precision": 0.644,
+        "recall": 0.746,
+        "f1": 0.691,
+        "rate": 0.4
+      },
+      "0.35": {
+        "precision": 0.623,
+        "recall": 0.681,
+        "f1": 0.651,
+        "rate": 0.378
+      },
+      "0.4": {
+        "precision": 0.63,
+        "recall": 0.63,
+        "f1": 0.63,
+        "rate": 0.345
+      },
+      "0.45": {
+        "precision": 0.699,
+        "recall": 0.623,
+        "f1": 0.659,
+        "rate": 0.307
+      },
+      "0.5": {
+        "precision": 0.688,
+        "recall": 0.399,
+        "f1": 0.505,
+        "rate": 0.2
+      },
+      "0.55": {
+        "precision": 0.697,
+        "recall": 0.384,
+        "f1": 0.495,
+        "rate": 0.19
+      },
+      "0.6": {
+        "precision": 0.739,
+        "recall": 0.37,
+        "f1": 0.493,
+        "rate": 0.172
+      },
+      "0.65": {
+        "precision": 0.735,
+        "recall": 0.362,
+        "f1": 0.485,
+        "rate": 0.17
+      },
+      "0.7": {
+        "precision": 0.76,
+        "recall": 0.275,
+        "f1": 0.404,
+        "rate": 0.125
+      }
+    },
+    "proxy": "historical reply was dm_redirect"
+  },
+  "system_version": "v2",
+  "systems": {
+    "trivial": {
+      "intent": {
+        "n": 193,
+        "accuracy": 0.233,
+        "accuracy_ci95": [
+          0.176,
+          0.295
+        ],
+        "macro_f1": 0.047,
+        "confusion": {
+          "labels": [
+            "billing_subscription",
+            "family_plan",
+            "account_access",
+            "playback_app_bug",
+            "offline_downloads",
+            "content_availability",
+            "feature_request_feedback",
+            "other"
+          ],
+          "rows_gold_cols_pred": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              32,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              29,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              26,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              22,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              45,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              17,
+              0
+            ]
+          ]
+        },
+        "unhandleable_detection": {
+          "gold_n": 7,
+          "recall": 0.0,
+          "false_positives": 0
+        }
+      },
+      "escalation": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "escalation_rate": 0.0,
+        "gold_rate": 0.355
+      },
+      "by_sample_strategy": {
+        "random_uniform": {
+          "intent": {
+            "n": 95,
+            "accuracy": 0.274,
+            "accuracy_ci95": [
+              0.189,
+              0.368
+            ],
+            "macro_f1": 0.054,
+            "confusion": {
+              "labels": [
+                "billing_subscription",
+                "family_plan",
+                "account_access",
+                "playback_app_bug",
+                "offline_downloads",
+                "content_availability",
+                "feature_request_feedback",
+                "other"
+              ],
+              "rows_gold_cols_pred": [
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  16,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  12,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  11,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  4,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  15,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  26,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  9,
+                  0
+                ]
+              ]
+            },
+            "unhandleable_detection": {
+              "gold_n": 5,
+              "recall": 0.0,
+              "false_positives": 0
+            }
+          },
+          "escalation": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "escalation_rate": 0.0,
+            "gold_rate": 0.31
+          }
+        },
+        "stratified": {
+          "intent": {
+            "n": 98,
+            "accuracy": 0.194,
+            "accuracy_ci95": [
+              0.122,
+              0.276
+            ],
+            "macro_f1": 0.041,
+            "confusion": {
+              "labels": [
+                "billing_subscription",
+                "family_plan",
+                "account_access",
+                "playback_app_bug",
+                "offline_downloads",
+                "content_availability",
+                "feature_request_feedback",
+                "other"
+              ],
+              "rows_gold_cols_pred": [
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  16,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  9,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  17,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  15,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  7,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  7,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  19,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  8,
+                  0
+                ]
+              ]
+            },
+            "unhandleable_detection": {
+              "gold_n": 2,
+              "recall": 0.0,
+              "false_positives": 0
+            }
+          },
+          "escalation": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "escalation_rate": 0.0,
+            "gold_rate": 0.4
+          }
+        }
+      },
+      "judge": {
+        "groundedness": 4.96,
+        "resolution_fit": 4.04,
+        "brand_voice": 4.99,
+        "safety_scope": 4.86,
+        "n_scored": 200
+      }
+    },
+    "simple": {
+      "intent": {
+        "n": 193,
+        "accuracy": 0.731,
+        "accuracy_ci95": [
+          0.668,
+          0.788
+        ],
+        "macro_f1": 0.724,
+        "confusion": {
+          "labels": [
+            "billing_subscription",
+            "family_plan",
+            "account_access",
+            "playback_app_bug",
+            "offline_downloads",
+            "content_availability",
+            "feature_request_feedback",
+            "other"
+          ],
+          "rows_gold_cols_pred": [
+            [
+              23,
+              1,
+              3,
+              1,
+              0,
+              1,
+              1,
+              2
+            ],
+            [
+              0,
+              11,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              3,
+              1,
+              21,
+              3,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              24,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              10,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              3,
+              0,
+              17,
+              2,
+              0
+            ],
+            [
+              3,
+              0,
+              1,
+              4,
+              0,
+              5,
+              32,
+              0
+            ],
+            [
+              1,
+              0,
+              3,
+              6,
+              0,
+              2,
+              2,
+              3
+            ]
+          ]
+        },
+        "unhandleable_detection": {
+          "gold_n": 7,
+          "recall": 0.0,
+          "false_positives": 0
+        }
+      },
+      "escalation": {
+        "precision": 0.885,
+        "recall": 0.324,
+        "f1": 0.474,
+        "escalation_rate": 0.13,
+        "gold_rate": 0.355
+      },
+      "by_sample_strategy": {
+        "random_uniform": {
+          "intent": {
+            "n": 95,
+            "accuracy": 0.684,
+            "accuracy_ci95": [
+              0.589,
+              0.768
+            ],
+            "macro_f1": 0.705,
+            "confusion": {
+              "labels": [
+                "billing_subscription",
+                "family_plan",
+                "account_access",
+                "playback_app_bug",
+                "offline_downloads",
+                "content_availability",
+                "feature_request_feedback",
+                "other"
+              ],
+              "rows_gold_cols_pred": [
+                [
+                  11,
+                  0,
+                  1,
+                  1,
+                  0,
+                  0,
+                  1,
+                  2
+                ],
+                [
+                  0,
+                  2,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  10,
+                  2,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  1,
+                  9,
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  3,
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  3,
+                  0,
+                  11,
+                  1,
+                  0
+                ],
+                [
+                  3,
+                  0,
+                  1,
+                  2,
+                  0,
+                  3,
+                  17,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  3,
+                  2,
+                  0,
+                  1,
+                  0,
+                  2
+                ]
+              ]
+            },
+            "unhandleable_detection": {
+              "gold_n": 5,
+              "recall": 0.0,
+              "false_positives": 0
+            }
+          },
+          "escalation": {
+            "precision": 0.846,
+            "recall": 0.355,
+            "f1": 0.5,
+            "escalation_rate": 0.13,
+            "gold_rate": 0.31
+          }
+        },
+        "stratified": {
+          "intent": {
+            "n": 98,
+            "accuracy": 0.776,
+            "accuracy_ci95": [
+              0.694,
+              0.847
+            ],
+            "macro_f1": 0.742,
+            "confusion": {
+              "labels": [
+                "billing_subscription",
+                "family_plan",
+                "account_access",
+                "playback_app_bug",
+                "offline_downloads",
+                "content_availability",
+                "feature_request_feedback",
+                "other"
+              ],
+              "rows_gold_cols_pred": [
+                [
+                  12,
+                  1,
+                  2,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  9,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  3,
+                  1,
+                  11,
+                  1,
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  15,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  7,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  6,
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  2,
+                  0,
+                  2,
+                  15,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  4,
+                  0,
+                  1,
+                  2,
+                  1
+                ]
+              ]
+            },
+            "unhandleable_detection": {
+              "gold_n": 2,
+              "recall": 0.0,
+              "false_positives": 0
+            }
+          },
+          "escalation": {
+            "precision": 0.923,
+            "recall": 0.3,
+            "f1": 0.453,
+            "escalation_rate": 0.13,
+            "gold_rate": 0.4
+          }
+        }
+      },
+      "judge": {
+        "groundedness": 4.8,
+        "resolution_fit": 4.03,
+        "brand_voice": 4.88,
+        "safety_scope": 4.96,
+        "n_scored": 200
+      }
+    },
+    "system": {
+      "intent": {
+        "n": 193,
+        "accuracy": 0.746,
+        "accuracy_ci95": [
+          0.684,
+          0.808
+        ],
+        "macro_f1": 0.671,
+        "confusion": {
+          "labels": [
+            "billing_subscription",
+            "family_plan",
+            "account_access",
+            "playback_app_bug",
+            "offline_downloads",
+            "content_availability",
+            "feature_request_feedback",
+            "other"
+          ],
+          "rows_gold_cols_pred": [
+            [
+              28,
+              1,
+              2,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              10,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              3,
+              0,
+              22,
+              2,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              2,
+              22,
+              1,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              11,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              0,
+              18,
+              0,
+              3
+            ],
+            [
+              3,
+              0,
+              2,
+              6,
+              0,
+              6,
+              25,
+              3
+            ],
+            [
+              0,
+              0,
+              1,
+              3,
+              2,
+              2,
+              1,
+              8
+            ]
+          ]
+        },
+        "unhandleable_detection": {
+          "gold_n": 7,
+          "recall": 0.571,
+          "false_positives": 1
+        }
+      },
+      "escalation": {
+        "precision": 0.694,
+        "recall": 0.831,
+        "f1": 0.756,
+        "escalation_rate": 0.425,
+        "gold_rate": 0.355,
+        "per_intent_recall": {
+          "account_access": {
+            "n": 23,
+            "recall": 0.91
+          },
+          "billing_subscription": {
+            "n": 26,
+            "recall": 1.0
+          },
+          "family_plan": {
+            "n": 8,
+            "recall": 0.5
+          },
+          "other": {
+            "n": 4,
+            "recall": 0.5
+          },
+          "playback_app_bug": {
+            "n": 3,
+            "recall": 0.0
+          },
+          "unhandleable": {
+            "n": 7,
+            "recall": 0.86
+          }
+        }
+      },
+      "by_sample_strategy": {
+        "random_uniform": {
+          "intent": {
+            "n": 95,
+            "accuracy": 0.737,
+            "accuracy_ci95": [
+              0.653,
+              0.821
+            ],
+            "macro_f1": 0.779,
+            "confusion": {
+              "labels": [
+                "billing_subscription",
+                "family_plan",
+                "account_access",
+                "playback_app_bug",
+                "offline_downloads",
+                "content_availability",
+                "feature_request_feedback",
+                "other"
+              ],
+              "rows_gold_cols_pred": [
+                [
+                  14,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  2,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  10,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  2,
+                  8,
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  4,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  13,
+                  0,
+                  1
+                ],
+                [
+                  2,
+                  0,
+                  1,
+                  3,
+                  0,
+                  5,
+                  14,
+                  1
+                ],
+                [
+                  0,
+                  0,
+                  1,
+                  1,
+                  0,
+                  1,
+                  1,
+                  5
+                ]
+              ]
+            },
+            "unhandleable_detection": {
+              "gold_n": 5,
+              "recall": 0.4,
+              "false_positives": 0
+            }
+          },
+          "escalation": {
+            "precision": 0.667,
+            "recall": 0.903,
+            "f1": 0.767,
+            "escalation_rate": 0.42,
+            "gold_rate": 0.31
+          }
+        },
+        "stratified": {
+          "intent": {
+            "n": 98,
+            "accuracy": 0.755,
+            "accuracy_ci95": [
+              0.663,
+              0.837
+            ],
+            "macro_f1": 0.659,
+            "confusion": {
+              "labels": [
+                "billing_subscription",
+                "family_plan",
+                "account_access",
+                "playback_app_bug",
+                "offline_downloads",
+                "content_availability",
+                "feature_request_feedback",
+                "other"
+              ],
+              "rows_gold_cols_pred": [
+                [
+                  14,
+                  1,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  8,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  2,
+                  0,
+                  12,
+                  1,
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  14,
+                  1,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  7,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  5,
+                  0,
+                  2
+                ],
+                [
+                  1,
+                  0,
+                  1,
+                  3,
+                  0,
+                  1,
+                  11,
+                  2
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  2,
+                  2,
+                  1,
+                  0,
+                  3
+                ]
+              ]
+            },
+            "unhandleable_detection": {
+              "gold_n": 2,
+              "recall": 1.0,
+              "false_positives": 1
+            }
+          },
+          "escalation": {
+            "precision": 0.721,
+            "recall": 0.775,
+            "f1": 0.747,
+            "escalation_rate": 0.43,
+            "gold_rate": 0.4
+          }
+        }
+      },
+      "escalation_threshold_sweep": {
+        "0.2": {
+          "precision": 0.538,
+          "recall": 0.887,
+          "f1": 0.67,
+          "escalation_rate": 0.585,
+          "gold_rate": 0.355
+        },
+        "0.3": {
+          "precision": 0.694,
+          "recall": 0.831,
+          "f1": 0.756,
+          "escalation_rate": 0.425,
+          "gold_rate": 0.355
+        },
+        "0.4": {
+          "precision": 0.716,
+          "recall": 0.746,
+          "f1": 0.731,
+          "escalation_rate": 0.37,
+          "gold_rate": 0.355
+        }
+      },
+      "signal_ablation": {
+        "full": {
+          "precision": 0.694,
+          "recall": 0.831,
+          "f1": 0.756,
+          "escalation_rate": 0.425
+        },
+        "without_sensitive_intent": {
+          "precision": 0.774,
+          "recall": 0.577,
+          "f1": 0.661,
+          "escalation_rate": 0.265
+        },
+        "without_money_or_security_incident": {
+          "precision": 0.69,
+          "recall": 0.817,
+          "f1": 0.748,
+          "escalation_rate": 0.42
+        },
+        "without_low_confidence": {
+          "precision": 0.701,
+          "recall": 0.761,
+          "f1": 0.73,
+          "escalation_rate": 0.385
+        },
+        "without_weak_retrieval": {
+          "precision": 0.714,
+          "recall": 0.775,
+          "f1": 0.743,
+          "escalation_rate": 0.385
+        },
+        "without_hostile_or_urgent": {
+          "precision": 0.695,
+          "recall": 0.803,
+          "f1": 0.745,
+          "escalation_rate": 0.41
+        },
+        "without_needs_private_data": {
+          "precision": 0.688,
+          "recall": 0.746,
+          "f1": 0.716,
+          "escalation_rate": 0.385
+        },
+        "without_repeat_contact": {
+          "precision": 0.694,
+          "recall": 0.831,
+          "f1": 0.756,
+          "escalation_rate": 0.425
+        }
+      },
+      "auto_groundedness": {
+        "n": 195,
+        "grounded_rate": 0.995
+      },
+      "format_checks": {
+        "under_280": 0.995,
+        "at_most_one_emoji": 1.0,
+        "asks_for_given_info": 0.0,
+        "mean_chars": 121.0
+      },
+      "draft_cost_latency": {
+        "n_live_calls": 195,
+        "mean_input_tokens": 774.0,
+        "mean_output_tokens": 108.0,
+        "mean_thinking_tokens": 1077.0,
+        "mean_seconds": 6.58,
+        "p90_seconds": 11.75
+      },
+      "reply_cache_misses": 0,
+      "reply_modes": {
+        "policy": 72,
+        "diagnostic": 64,
+        "fix": 44,
+        "none": 20
+      },
+      "judge": {
+        "groundedness": 4.78,
+        "resolution_fit": 4.64,
+        "brand_voice": 4.99,
+        "safety_scope": 5.0,
+        "n_scored": 183
+      }
+    }
+  },
+  "system_vs_simple_paired_bootstrap": {
+    "intent_accuracy": {
+      "diff": 0.016,
+      "ci95": [
+        -0.041,
+        0.074
+      ],
+      "p_diff_le_0": 0.323
+    },
+    "escalation_f1": {
+      "diff": 0.282,
+      "ci95": [
+        0.161,
+        0.418
+      ],
+      "p_diff_le_0": 0.0
+    },
+    "judge_groundedness": {
+      "diff": -0.34,
+      "ci95": [
+        -0.58,
+        -0.12
+      ],
+      "p_diff_le_0": 0.999
+    },
+    "judge_resolution_fit": {
+      "diff": 0.3,
+      "ci95": [
+        -0.0,
+        0.59
+      ],
+      "p_diff_le_0": 0.029
+    },
+    "judge_brand_voice": {
+      "diff": -0.23,
+      "ci95": [
+        -0.41,
+        -0.06
+      ],
+      "p_diff_le_0": 0.999
+    },
+    "judge_safety_scope": {
+      "diff": -0.3,
+      "ci95": [
+        -0.46,
+        -0.14
+      ],
+      "p_diff_le_0": 1.0
+    }
+  },
+  "llm_cache": "llm cache: 0 misses",
+  "wall_seconds": 18.4
+}
