@@ -10,3 +10,6 @@ models/
 .env
 !models/params.json
 reports/*_partial*
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
